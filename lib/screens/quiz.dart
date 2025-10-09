@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -75,7 +76,12 @@ class _QuizPageState extends State<QuizPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.close, color: Colors.red),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          },
         ),
         title: Text(
           'First Aid Quiz',
