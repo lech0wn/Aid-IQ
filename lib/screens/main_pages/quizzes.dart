@@ -191,6 +191,8 @@ class _QuizzesPageState extends State<QuizzesPage> {
                 final quiz = filteredQuizzes[index];
                 return Card(
                   elevation: 2,
+                  color: Color(0xFFEDEDED),
+                  surfaceTintColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -275,6 +277,7 @@ class _QuizzesPageState extends State<QuizzesPage> {
                             style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontWeight: FontWeight.w500,
+                              fontSize: 12,
                             ),
                           ),
                         ),
