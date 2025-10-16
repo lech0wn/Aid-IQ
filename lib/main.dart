@@ -1,8 +1,5 @@
-import 'package:aid_iq/screens/home.dart';
-import 'package:aid_iq/screens/quiz.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'screens/login.dart';
+import 'package:aid_iq/widgets/main_layout.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,8 +12,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(textTheme: GoogleFonts.poppinsTextTheme()),
-      home: QuizPage(), // Call the LoginScreen from login.dart
+      title: 'Navigation Example',
+      theme: ThemeData(primarySwatch: Colors.red),
+      home: const MainLayout(),
     );
   }
 }
