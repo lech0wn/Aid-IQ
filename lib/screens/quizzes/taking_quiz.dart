@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class QuizPage extends StatefulWidget {
   final String quizTitle; // Add this parameter
@@ -27,18 +28,20 @@ class _QuizPageState extends State<QuizPage> {
     final options = q['options'] as List<String>;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.red),
+          icon: const Icon(Icons.close, color: Color(0xFFd84040)),
           onPressed: () {
             Navigator.pop(context); // Navigate back to the previous page
           },
         ),
         title: Text(
           widget.quizTitle, // Use the quiz title dynamically
-          style: const TextStyle(
+          style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -52,25 +55,32 @@ class _QuizPageState extends State<QuizPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Progress bar
-            LinearProgressIndicator(
-              value: (currentQuestionIndex + 1) / widget.questions.length,
-              backgroundColor: Colors.grey[300],
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10), // Add rounded corners
+              child: LinearProgressIndicator(
+                value: (currentQuestionIndex + 1) / widget.questions.length,
+                backgroundColor: Colors.grey[300],
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFFd84040),
+                ),
+                minHeight:
+                    10, // Optional: Adjust the height of the progress bar
+              ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 Text(
                   '${currentQuestionIndex + 1}',
-                  style: TextStyle(
-                    color: Colors.red[300],
+                  style: GoogleFonts.poppins(
+                    color: Color(0xFFd84040),
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
                 ),
                 Text(
                   '/${widget.questions.length}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 16),
+                  style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
                 ),
               ],
             ),
@@ -80,14 +90,14 @@ class _QuizPageState extends State<QuizPage> {
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 q['questionText'] as String,
-                style: const TextStyle(
+                style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontSize: 24,
                 ),
               ),
             ),
@@ -100,8 +110,8 @@ class _QuizPageState extends State<QuizPage> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        isSelected ? Colors.blue[100] : Colors.grey[200],
-                    foregroundColor: isSelected ? Colors.blue : Colors.black,
+                        isSelected ? Color(0xFF587DBD) : Color(0xFFD9D9D9),
+                    foregroundColor: isSelected ? Colors.white : Colors.black,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
                       vertical: 16,
@@ -109,10 +119,6 @@ class _QuizPageState extends State<QuizPage> {
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
-                      side:
-                          isSelected
-                              ? const BorderSide(color: Colors.red, width: 2)
-                              : BorderSide.none,
                     ),
                   ),
                   onPressed: () {
@@ -123,12 +129,18 @@ class _QuizPageState extends State<QuizPage> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(child: Text(options[index], softWrap: true)),
+                      Expanded(
+                        child: Text(
+                          options[index],
+                          softWrap: true,
+                          style: GoogleFonts.poppins(fontSize: 16),
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       const Icon(
                         Icons.arrow_forward_ios,
                         size: 18,
-                        color: Colors.grey,
+                        color: Color(0xFF636363),
                       ),
                     ],
                   ),
@@ -154,7 +166,13 @@ class _QuizPageState extends State<QuizPage> {
                           currentQuestionIndex--;
                         });
                       },
-                      child: const Text('Back', style: TextStyle(fontSize: 18)),
+                      child: Text(
+                        'Back',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          color: Colors.black,
+                        ),
+                      ),
                     ),
                   ),
                 if (currentQuestionIndex > 0) const SizedBox(width: 16),
@@ -162,7 +180,7 @@ class _QuizPageState extends State<QuizPage> {
                   flex: 2,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Color(0xFF238349),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
@@ -217,7 +235,10 @@ class _QuizPageState extends State<QuizPage> {
                       currentQuestionIndex == widget.questions.length - 1
                           ? 'Finish'
                           : 'Next',
-                      style: const TextStyle(fontSize: 18),
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
