@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'home.dart';
 
 class QuizPage extends StatefulWidget {
-  const QuizPage({super.key});
+  final String quizTitle; // Add this parameter
+  final List<Map<String, dynamic>> questions; // Add this parameter
+
+  const QuizPage({super.key, required this.quizTitle, required this.questions});
 
   @override
   State<QuizPage> createState() => _QuizPageState();
@@ -10,64 +12,18 @@ class QuizPage extends StatefulWidget {
 
 class _QuizPageState extends State<QuizPage> {
   int currentQuestionIndex = 0;
-  List<int?> selectedOptions = List.filled(10, null);
+  List<int?> selectedOptions = [];
 
-  final List<Map<String, Object>> questions = [
-    {
-      'questionText': 'What is the capital of France?',
-      'options': ['Berlin', 'Madrid', 'Paris', 'Rome'],
-      'correctOptionIndex': 2,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-    {
-      'questionText': 'What is 2 + 2?',
-      'options': ['3', '4', '5', '6'],
-      'correctOptionIndex': 1,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Initialize selectedOptions with null values for each question
+    selectedOptions = List.filled(widget.questions.length, null);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final q = questions[currentQuestionIndex];
+    final q = widget.questions[currentQuestionIndex];
     final options = q['options'] as List<String>;
 
     return Scaffold(
@@ -75,17 +31,14 @@ class _QuizPageState extends State<QuizPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.close, color: Colors.red),
+          icon: const Icon(Icons.close, color: Colors.red),
           onPressed: () {
-            Navigator.push(
-              context, 
-              MaterialPageRoute(builder: (context) => const HomePage()),
-            );
+            Navigator.pop(context); // Navigate back to the previous page
           },
         ),
         title: Text(
-          'First Aid Quiz',
-          style: TextStyle(
+          widget.quizTitle, // Use the quiz title dynamically
+          style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -100,11 +53,11 @@ class _QuizPageState extends State<QuizPage> {
           children: [
             // Progress bar
             LinearProgressIndicator(
-              value: (currentQuestionIndex + 1) / questions.length,
+              value: (currentQuestionIndex + 1) / widget.questions.length,
               backgroundColor: Colors.grey[300],
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Text(
@@ -116,42 +69,49 @@ class _QuizPageState extends State<QuizPage> {
                   ),
                 ),
                 Text(
-                  '/${questions.length}',
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  '/${widget.questions.length}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 16),
                 ),
               ],
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(20),
-              margin: EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
                 q['questionText'] as String,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
+            // Options
             ...List.generate(options.length, (index) {
               final isSelected = selectedOptions[currentQuestionIndex] == index;
               return Container(
-                margin: EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 12),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
                         isSelected ? Colors.blue[100] : Colors.grey[200],
                     foregroundColor: isSelected ? Colors.blue : Colors.black,
                     elevation: 0,
-                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 16,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                       side:
                           isSelected
-                              ? BorderSide(color: Colors.red, width: 2)
+                              ? const BorderSide(color: Colors.red, width: 2)
                               : BorderSide.none,
                     ),
                   ),
@@ -164,7 +124,7 @@ class _QuizPageState extends State<QuizPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(options[index]),
-                      Icon(
+                      const Icon(
                         Icons.arrow_forward_ios,
                         size: 18,
                         color: Colors.grey,
@@ -174,7 +134,8 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               );
             }),
-            Spacer(),
+            const Spacer(),
+            // Navigation buttons
             Row(
               children: [
                 if (currentQuestionIndex > 0)
@@ -185,17 +146,17 @@ class _QuizPageState extends State<QuizPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
-                        minimumSize: Size(0, 48),
+                        minimumSize: const Size(0, 48),
                       ),
                       onPressed: () {
                         setState(() {
                           currentQuestionIndex--;
                         });
                       },
-                      child: Text('Back', style: TextStyle(fontSize: 18)),
+                      child: const Text('Back', style: TextStyle(fontSize: 18)),
                     ),
                   ),
-                if (currentQuestionIndex > 0) SizedBox(width: 16),
+                if (currentQuestionIndex > 0) const SizedBox(width: 16),
                 Expanded(
                   flex: 2,
                   child: ElevatedButton(
@@ -204,31 +165,64 @@ class _QuizPageState extends State<QuizPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      minimumSize: Size(0, 48),
+                      minimumSize: const Size(0, 48),
                     ),
                     onPressed:
                         selectedOptions[currentQuestionIndex] == null
                             ? null
                             : () {
-                              if (currentQuestionIndex < questions.length - 1) {
+                              if (currentQuestionIndex <
+                                  widget.questions.length - 1) {
                                 setState(() {
                                   currentQuestionIndex++;
                                 });
                               } else {
                                 // Show results of quiz
+                                int score = 0;
+                                for (
+                                  int i = 0;
+                                  i < widget.questions.length;
+                                  i++
+                                ) {
+                                  if (selectedOptions[i] ==
+                                      widget
+                                          .questions[i]['correctOptionIndex']) {
+                                    score++;
+                                  }
+                                }
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: const Text('Quiz Completed'),
+                                        content: Text(
+                                          'Your score is $score/${widget.questions.length}',
+                                          style: const TextStyle(fontSize: 18),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              Navigator.pop(context);
+                                            },
+                                            child: const Text('OK'),
+                                          ),
+                                        ],
+                                      ),
+                                );
                               }
                             },
                     child: Text(
-                      currentQuestionIndex == questions.length - 1
+                      currentQuestionIndex == widget.questions.length - 1
                           ? 'Finish'
-                          : 'Check',
-                      style: TextStyle(fontSize: 18),
+                          : 'Next',
+                      style: const TextStyle(fontSize: 18),
                     ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
           ],
         ),
       ),

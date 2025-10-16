@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
-class HomePage extends StatelessWidget {
+import 'package:google_fonts/google_fonts.dart';
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-@override
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String userName = "Annissa Balaga";
+  List<Map<String, dynamic>> recentQuizzes = [
+    {
+      "title": "Wound Cleaning",
+      "questions": 10,
+      "completed": true,
+      "icon": Icons.local_hospital,
+    },
+    {
+      "title": "R.I.C.E (Treating Sprains)",
+      "questions": 10,
+      "completed": true,
+      "icon": Icons.add,
+    },
+  ];
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -10,8 +33,9 @@ class HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header Section
             Container(
-              color: Colors.red,
+              color: Color(0xFFd84040),
               padding: const EdgeInsets.only(
                 top: 48,
                 left: 24,
@@ -24,15 +48,18 @@ class HomePage extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'Hello,',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 20,
+                          ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Annissa Balaga',
-                          style: TextStyle(
+                          userName,
+                          style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 28,
@@ -45,6 +72,8 @@ class HomePage extends StatelessWidget {
                 ],
               ),
             ),
+
+            // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24.0,
@@ -65,35 +94,40 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Introduction Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: Color(0xFFd84040),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Introduction to AID IQ',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Your pocket-sized guide to first aid knowledge',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: Colors.red,
+                        foregroundColor: Color(0xFFd84040),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -103,7 +137,12 @@ class HomePage extends StatelessWidget {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        // Example action: Show a snackbar
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Learn More clicked!')),
+                        );
+                      },
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -117,20 +156,26 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
+
+            // Quizzes Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
                     'Quizzes',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
                   ),
                   Text(
                     'See All',
-                    style: TextStyle(
-                      color: Colors.red,
+                    style: GoogleFonts.poppins(
+                      color: Color(0xFFd84040),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -156,33 +201,38 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
+
+            // Recent Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: const Text(
+              child: Text(
                 'Recent',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
             ),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
-                children: const [
-                  _RecentQuizCard(
-                    title: 'Wound Cleaning',
-                    questions: 10,
-                    completed: true,
-                    icon: Icons.local_hospital,
-                  ),
-                  SizedBox(height: 12),
-                  _RecentQuizCard(
-                    title: 'R.I.C.E (Treating Sprains)',
-                    questions: 10,
-                    completed: true,
-                    icon: Icons.add,
-                  ),
-                ],
+                children:
+                    recentQuizzes.map((quiz) {
+                      return Column(
+                        children: [
+                          _RecentQuizCard(
+                            title: quiz["title"],
+                            questions: quiz["questions"],
+                            completed: quiz["completed"],
+                            icon: quiz["icon"],
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
             const SizedBox(height: 24),
@@ -192,9 +242,6 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
-  
-
 
 class _QuizCard extends StatelessWidget {
   final String title;
@@ -222,9 +269,9 @@ class _QuizCard extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: 14,
               color: Colors.white,
             ),
           ),
@@ -269,14 +316,17 @@ class _RecentQuizCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
                 Text(
                   '$questions questions',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -288,9 +338,9 @@ class _RecentQuizCard extends StatelessWidget {
                 color: Colors.green,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
+              child: Text(
                 'Completed',
-                style: TextStyle(color: Colors.white, fontSize: 12),
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 10),
               ),
             ),
         ],
