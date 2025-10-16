@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aid_iq/screens/quizzes/taking_quiz.dart'; // Import QuizPage
 import 'package:aid_iq/screens/quizzes/data/cpr_questions.dart'; // Import CPR questions
+import 'package:aid_iq/screens/quizzes/data/first_aid_intro_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/proper_bandaging_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/wound_cleaning_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/rice_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/strains_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/animal_bites_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/choking_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/fainting_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/seizure_questions.dart';
+import 'package:aid_iq/screens/quizzes/data/first_aid_equipment_questions.dart';
 
 class QuizzesPage extends StatefulWidget {
   const QuizzesPage({super.key});
@@ -14,12 +24,41 @@ class _QuizzesPageState extends State<QuizzesPage> {
   // State variables
   String selectedFilter = "All";
 
+  // Map quiz titles to their question maps for clearer routing
+  late final Map<String, List<Map<String, dynamic>>> quizTitleToQuestions = {
+    'CPR': cprQuestions.map((q) => q.toMap()).toList(),
+    'First Aid Introduction':
+        firstAidIntroductionQuestions.map((q) => q.toMap()).toList(),
+    'Proper Bandaging': properBandagingQuestions.map((q) => q.toMap()).toList(),
+    'Wound Cleaning': woundCleaningQuestions.map((q) => q.toMap()).toList(),
+    'R.I.C.E. (Treating Sprains)': riceQuestions.map((q) => q.toMap()).toList(),
+    'Strains': strainsQuestions.map((q) => q.toMap()).toList(),
+    'Animal Bites': animalBitesQuestions.map((q) => q.toMap()).toList(),
+    'Choking': chokingQuestions.map((q) => q.toMap()).toList(),
+    'Fainting': faintingQuestions.map((q) => q.toMap()).toList(),
+    'Seizure': seizureQuestions.map((q) => q.toMap()).toList(),
+    'First Aid Equipments':
+        firstAidEquipmentQuestions.map((q) => q.toMap()).toList(),
+    // Add other quizzes here as you create their data lists
+  };
+
   // List of quizzes
   final List<Map<String, dynamic>> quizzes = [
     {"title": "First Aid Introduction", "questions": 10, "status": "Completed"},
     {"title": "CPR", "questions": 10, "status": "Ongoing"},
     {"title": "Proper Bandaging", "questions": 10, "status": "Completed"},
     {"title": "Wound Cleaning", "questions": 10, "status": "Ongoing"},
+    {
+      "title": "R.I.C.E. (Treating Sprains)",
+      "questions": 10,
+      "status": "Ongoing",
+    },
+    {"title": "Strains", "questions": 10, "status": "Ongoing"},
+    {"title": "Animal Bites", "questions": 10, "status": "Ongoing"},
+    {"title": "Choking", "questions": 10, "status": "Ongoing"},
+    {"title": "Fainting", "questions": 10, "status": "Ongoing"},
+    {"title": "Seizure", "questions": 10, "status": "Ongoing"},
+    {"title": "First Aid Equipments", "questions": 10, "status": "Ongoing"},
   ];
 
   @override
@@ -214,19 +253,17 @@ class _QuizzesPageState extends State<QuizzesPage> {
                               quiz["status"] == "Completed"
                                   ? null
                                   : () {
-                                    // Navigate to QuizPage with the appropriate questions
+                                    final String title =
+                                        quiz["title"] as String;
+                                    final questions =
+                                        quizTitleToQuestions[title] ?? [];
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder:
                                             (context) => QuizPage(
-                                              quizTitle: quiz["title"],
-                                              questions:
-                                                  quiz["title"] == "CPR"
-                                                      ? cprQuestions
-                                                          .map((q) => q.toMap())
-                                                          .toList()
-                                                      : [], // Add other quizzes here
+                                              quizTitle: title,
+                                              questions: questions,
                                             ),
                                       ),
                                     );
