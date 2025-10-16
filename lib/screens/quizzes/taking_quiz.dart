@@ -121,9 +121,10 @@ class _QuizPageState extends State<QuizPage> {
                     });
                   },
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(options[index]),
+                      Expanded(child: Text(options[index], softWrap: true)),
+                      const SizedBox(width: 12),
                       const Icon(
                         Icons.arrow_forward_ios,
                         size: 18,
