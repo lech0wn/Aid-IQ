@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:aid_iq/screens/quizzes/quiz_results.dart'; // Add this import
 
 class QuizPage extends StatefulWidget {
-  final String quizTitle; // Add this parameter
-  final List<Map<String, dynamic>> questions; // Add this parameter
+  final String quizTitle;
+  final List<Map<String, dynamic>> questions;
 
   const QuizPage({super.key, required this.quizTitle, required this.questions});
 
@@ -18,7 +19,6 @@ class _QuizPageState extends State<QuizPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize selectedOptions with null values for each question
     selectedOptions = List.filled(widget.questions.length, null);
   }
 
@@ -36,11 +36,11 @@ class _QuizPageState extends State<QuizPage> {
         leading: IconButton(
           icon: const Icon(Icons.close, color: Color(0xFFd84040)),
           onPressed: () {
-            Navigator.pop(context); // Navigate back to the previous page
+            Navigator.pop(context);
           },
         ),
         title: Text(
-          widget.quizTitle, // Use the quiz title dynamically
+          widget.quizTitle,
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -54,17 +54,15 @@ class _QuizPageState extends State<QuizPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Progress bar
             ClipRRect(
-              borderRadius: BorderRadius.circular(10), // Add rounded corners
+              borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
                 value: (currentQuestionIndex + 1) / widget.questions.length,
                 backgroundColor: Colors.grey[300],
                 valueColor: const AlwaysStoppedAnimation<Color>(
                   Color(0xFFd84040),
                 ),
-                minHeight:
-                    10, // Optional: Adjust the height of the progress bar
+                minHeight: 10,
               ),
             ),
             const SizedBox(height: 8),
@@ -102,7 +100,6 @@ class _QuizPageState extends State<QuizPage> {
               ),
             ),
             const SizedBox(height: 24),
-            // Options
             ...List.generate(options.length, (index) {
               final isSelected = selectedOptions[currentQuestionIndex] == index;
               return Container(
@@ -148,7 +145,6 @@ class _QuizPageState extends State<QuizPage> {
               );
             }),
             const Spacer(),
-            // Navigation buttons
             Row(
               children: [
                 if (currentQuestionIndex > 0)
@@ -186,51 +182,37 @@ class _QuizPageState extends State<QuizPage> {
                       ),
                       minimumSize: const Size(0, 48),
                     ),
-                    onPressed:
-                        selectedOptions[currentQuestionIndex] == null
-                            ? null
-                            : () {
-                              if (currentQuestionIndex <
-                                  widget.questions.length - 1) {
-                                setState(() {
-                                  currentQuestionIndex++;
-                                });
-                              } else {
-                                // Show results of quiz
-                                int score = 0;
-                                for (
-                                  int i = 0;
-                                  i < widget.questions.length;
-                                  i++
-                                ) {
-                                  if (selectedOptions[i] ==
-                                      widget
-                                          .questions[i]['correctOptionIndex']) {
-                                    score++;
-                                  }
+                    onPressed: selectedOptions[currentQuestionIndex] == null
+                        ? null
+                        : () {
+                            if (currentQuestionIndex <
+                                widget.questions.length - 1) {
+                              setState(() {
+                                currentQuestionIndex++;
+                              });
+                            } else {
+                              // Calculate score
+                              int score = 0;
+                              for (int i = 0; i < widget.questions.length; i++) {
+                                if (selectedOptions[i] ==
+                                    widget.questions[i]['correctAnswerIndex']) {
+                                  score++;
                                 }
-                                showDialog(
-                                  context: context,
-                                  builder:
-                                      (context) => AlertDialog(
-                                        title: const Text('Quiz Completed'),
-                                        content: Text(
-                                          'Your score is $score/${widget.questions.length}',
-                                          style: const TextStyle(fontSize: 18),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              Navigator.pop(context);
-                                            },
-                                            child: const Text('OK'),
-                                          ),
-                                        ],
-                                      ),
-                                );
                               }
-                            },
+
+                              // Navigate to results page
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => QuizResultsPage(
+                                    questions: widget.questions,
+                                    userAnswers: selectedOptions,
+                                    score: score,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
                     child: Text(
                       currentQuestionIndex == widget.questions.length - 1
                           ? 'Finish'
