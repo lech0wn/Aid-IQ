@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,20 +12,62 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String userName = "Annissa Balaga";
-  List<Map<String, dynamic>> recentQuizzes = [
-    {
-      "title": "Wound Cleaning",
-      "questions": 10,
-      "completed": true,
-      "icon": Icons.local_hospital,
-    },
-    {
-      "title": "R.I.C.E (Treating Sprains)",
-      "questions": 10,
-      "completed": true,
-      "icon": Icons.add,
-    },
-  ];
+  List<Map<String, dynamic>> recentQuizzes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentQuizzes();
+  }
+
+  Future<void> _loadRecentQuizzes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('quiz_progress');
+    if (jsonString != null) {
+      try {
+        final Map<String, dynamic> data = json.decode(jsonString);
+        final List<Map<String, dynamic>> quizzes = [];
+        
+        data.forEach((title, value) {
+          if (value is Map<String, dynamic>) {
+            quizzes.add({
+              "title": title,
+              "questions": 10,
+              "completed": value['status'] == 'Completed',
+              "score": value['score'],
+              "icon": _getIconForQuiz(title),
+            });
+          }
+        });
+
+        // Sort by completed quizzes first and take most recent 3
+        quizzes.sort((a, b) => (b["completed"] ? 1 : 0) - (a["completed"] ? 1 : 0));
+        
+        setState(() {
+          recentQuizzes = quizzes.take(3).toList();
+        });
+      } catch (e) {
+        // Handle parse errors silently
+      }
+    }
+  }
+
+  IconData _getIconForQuiz(String title) {
+    switch (title) {
+      case 'CPR':
+        return Icons.favorite;
+      case 'Wound Cleaning':
+        return Icons.healing;
+      case 'R.I.C.E. (Treating Sprains)':
+        return Icons.accessibility_new;
+      case 'First Aid Introduction':
+        return Icons.medical_services;
+      case 'Proper Bandaging':
+        return Icons.local_hospital;
+      default:
+        return Icons.quiz;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -228,6 +272,7 @@ class _HomePageState extends State<HomePage> {
                             questions: quiz["questions"],
                             completed: quiz["completed"],
                             icon: quiz["icon"],
+                            score: quiz["score"],
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -286,11 +331,13 @@ class _RecentQuizCard extends StatelessWidget {
   final int questions;
   final bool completed;
   final IconData icon;
+  final int? score;
   const _RecentQuizCard({
     required this.title,
     required this.questions,
     required this.completed,
     required this.icon,
+    this.score,
   });
 
   @override
@@ -331,7 +378,7 @@ class _RecentQuizCard extends StatelessWidget {
               ],
             ),
           ),
-          if (completed)
+            if (completed)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
@@ -339,7 +386,7 @@ class _RecentQuizCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Completed',
+                score != null ? 'Score: $score/$questions' : 'Completed',
                 style: GoogleFonts.poppins(color: Colors.white, fontSize: 10),
               ),
             ),

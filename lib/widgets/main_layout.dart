@@ -59,7 +59,7 @@ class _MainLayoutState extends State<MainLayout> {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Color.fromRGBO(0, 0, 0, 0.3),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),

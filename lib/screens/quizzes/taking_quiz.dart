@@ -183,36 +183,42 @@ class _QuizPageState extends State<QuizPage> {
                       minimumSize: const Size(0, 48),
                     ),
                     onPressed: selectedOptions[currentQuestionIndex] == null
-                        ? null
-                        : () {
-                            if (currentQuestionIndex <
-                                widget.questions.length - 1) {
-                              setState(() {
-                                currentQuestionIndex++;
-                              });
-                            } else {
-                              // Calculate score
-                              int score = 0;
-                              for (int i = 0; i < widget.questions.length; i++) {
-                                if (selectedOptions[i] ==
-                                    widget.questions[i]['correctAnswerIndex']) {
-                                  score++;
+                          ? null
+                          : () async {
+                              if (currentQuestionIndex <
+                                  widget.questions.length - 1) {
+                                setState(() {
+                                  currentQuestionIndex++;
+                                });
+                              } else {
+                                // Calculate score
+                                int score = 0;
+                                for (int i = 0; i < widget.questions.length; i++) {
+                                  if (selectedOptions[i] ==
+                                      widget.questions[i]['correctAnswerIndex']) {
+                                    score++;
+                                  }
                                 }
-                              }
 
-                              // Navigate to results page
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => QuizResultsPage(
-                                    questions: widget.questions,
-                                    userAnswers: selectedOptions,
-                                    score: score,
+                                // Capture the navigator before the async gap, then
+                                // push and await the results page. Using the captured
+                                // NavigatorState avoids using a BuildContext across
+                                // the async gap.
+                                final navigator = Navigator.of(context);
+                                final result = await navigator.push(
+                                  MaterialPageRoute(
+                                    builder: (context) => QuizResultsPage(
+                                      questions: widget.questions,
+                                      userAnswers: selectedOptions,
+                                      score: score,
+                                    ),
                                   ),
-                                ),
-                              );
-                            }
-                          },
+                                );
+
+                                if (!mounted) return;
+                                navigator.pop(result ?? true);
+                              }
+                            },
                     child: Text(
                       currentQuestionIndex == widget.questions.length - 1
                           ? 'Finish'
