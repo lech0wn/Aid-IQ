@@ -7,10 +7,10 @@ class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
   @override
-  State<MainLayout> createState() => _MainLayoutState();
+  State<MainLayout> createState() => MainLayoutState();
 }
 
-class _MainLayoutState extends State<MainLayout> {
+class MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
   // List of pages for navigation
@@ -24,6 +24,11 @@ class _MainLayoutState extends State<MainLayout> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  // Public method to switch tabs from child widgets
+  void switchToTab(int index) {
+    _onItemTapped(index);
   }
 
   @override

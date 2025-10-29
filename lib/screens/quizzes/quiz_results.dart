@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class QuizResultsPage extends StatelessWidget {
+class QuizResultsPage extends StatefulWidget {
   final List<Map<String, dynamic>> questions;
   final List<int?> userAnswers;
   final int score;
@@ -13,13 +13,20 @@ class QuizResultsPage extends StatelessWidget {
     required this.score,
   });
 
+  @override
+  State<QuizResultsPage> createState() => _QuizResultsPageState();
+}
+
+class _QuizResultsPageState extends State<QuizResultsPage> {
+  final ScrollController _scrollController = ScrollController();
+
   // Calculate the actual score based on correct answers
   int _calculateScore() {
     int correctCount = 0;
-    for (int i = 0; i < questions.length; i++) {
-      final userAnswerIndex = userAnswers[i];
-      final correctOptionIndex = questions[i]['correctOptionIndex'];
-      
+    for (int i = 0; i < widget.questions.length; i++) {
+      final userAnswerIndex = widget.userAnswers[i];
+      final correctOptionIndex = widget.questions[i]['correctOptionIndex'];
+
       if (userAnswerIndex != null && userAnswerIndex == correctOptionIndex) {
         correctCount++;
       }
@@ -28,10 +35,18 @@ class QuizResultsPage extends StatelessWidget {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Use calculated score instead of passed score
     final actualScore = _calculateScore();
-    
+    final questions = widget.questions;
+    final userAnswers = widget.userAnswers;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -47,6 +62,7 @@ class QuizResultsPage extends StatelessWidget {
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,8 +103,9 @@ class QuizResultsPage extends StatelessWidget {
                 final correctOptionIndex = question['correctOptionIndex'];
                 final options = question['options'] as List<String>;
 
-                final isCorrect = userAnswerIndex != null && 
-                                  userAnswerIndex == correctOptionIndex;
+                final isCorrect =
+                    userAnswerIndex != null &&
+                    userAnswerIndex == correctOptionIndex;
 
                 return Card(
                   color: Colors.white,
@@ -143,7 +160,9 @@ class QuizResultsPage extends StatelessWidget {
 
                         // Question text
                         Text(
-                          question['questionText'] ?? question['question'] ?? '',
+                          question['questionText'] ??
+                              question['question'] ??
+                              '',
                           style: GoogleFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -166,7 +185,8 @@ class QuizResultsPage extends StatelessWidget {
                         // Options list
                         ...List.generate(options.length, (optionIndex) {
                           final isUserAnswer = userAnswerIndex == optionIndex;
-                          final isCorrectAnswer = correctOptionIndex == optionIndex;
+                          final isCorrectAnswer =
+                              correctOptionIndex == optionIndex;
 
                           Color backgroundColor = Colors.transparent;
                           Color textColor = Colors.black87;
@@ -310,27 +330,90 @@ class QuizResultsPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // ACTION BUTTON (Retake Quiz button removed)
-            Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFd84040),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+            // ACTION BUTTONS
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // See Results Button
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[300],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
+                      // Scroll to top to show the score and first question results
+                      _scrollController.animateTo(
+                        0,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    child: Text(
+                      "See Results",
+                      style: GoogleFonts.poppins(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
+                const SizedBox(width: 12),
+
+                // Retake Button
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFd84040),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
+                      // Return 'retake' to indicate user wants to retake
+                      Navigator.pop(context, {'retake': true});
+                    },
+                    child: Text(
+                      "Retake",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Back to Quizzes Button
+            Center(
+              child: TextButton(
                 onPressed: () {
-                  // Pop the results page and return `true` to indicate completion.
-                  Navigator.pop(context, true);
+                  // Pop the results page and return completion data
+                  Navigator.pop(context, {
+                    'completed': true,
+                    'score': actualScore,
+                    'userAnswers': widget.userAnswers,
+                  });
                 },
                 child: Text(
                   "Back to Quizzes",
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: const Color(0xFFd84040),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
