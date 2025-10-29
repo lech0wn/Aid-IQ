@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aid_iq/screens/quizzes/taking_quiz.dart'; // Import QuizPage
 import 'package:aid_iq/screens/quizzes/data/cpr_questions.dart'; // Import CPR questions
 import 'package:aid_iq/screens/quizzes/data/first_aid_intro_questions.dart';
@@ -44,22 +46,65 @@ class _QuizzesPageState extends State<QuizzesPage> {
 
   // List of quizzes
   final List<Map<String, dynamic>> quizzes = [
-    {"title": "First Aid Introduction", "questions": 10, "status": "Completed"},
-    {"title": "CPR", "questions": 10, "status": "Ongoing"},
-    {"title": "Proper Bandaging", "questions": 10, "status": "Completed"},
-    {"title": "Wound Cleaning", "questions": 10, "status": "Ongoing"},
+    {"title": "First Aid Introduction", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "CPR", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "Proper Bandaging", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "Wound Cleaning", "questions": 10, "status": "Ongoing", "score": null},
     {
       "title": "R.I.C.E. (Treating Sprains)",
       "questions": 10,
       "status": "Ongoing",
     },
-    {"title": "Strains", "questions": 10, "status": "Ongoing"},
-    {"title": "Animal Bites", "questions": 10, "status": "Ongoing"},
-    {"title": "Choking", "questions": 10, "status": "Ongoing"},
-    {"title": "Fainting", "questions": 10, "status": "Ongoing"},
-    {"title": "Seizure", "questions": 10, "status": "Ongoing"},
-    {"title": "First Aid Equipments", "questions": 10, "status": "Ongoing"},
+    {"title": "Strains", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "Animal Bites", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "Choking", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "Fainting", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "Seizure", "questions": 10, "status": "Ongoing", "score": null},
+    {"title": "First Aid Equipments", "questions": 10, "status": "Ongoing", "score": null},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuizProgress();
+  }
+
+  Future<void> _loadQuizProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('quiz_progress');
+    if (jsonString == null) return;
+    try {
+      final Map<String, dynamic> data = json.decode(jsonString);
+      setState(() {
+        for (final q in quizzes) {
+          final title = q['title'] as String;
+          if (data.containsKey(title)) {
+            final entry = data[title] as Map<String, dynamic>;
+            q['status'] = entry['status'] ?? q['status'];
+            q['score'] = entry.containsKey('score') ? entry['score'] : q['score'];
+          }
+        }
+      });
+    } catch (_) {
+      // ignore parse errors
+    }
+  }
+
+  Future<void> _saveQuizProgress(String title, String status, int? score) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('quiz_progress');
+    Map<String, dynamic> data = {};
+    if (jsonString != null) {
+      try {
+        data = json.decode(jsonString) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+    data[title] = {
+      'status': status,
+      if (score != null) 'score': score,
+    };
+    await prefs.setString('quiz_progress', json.encode(data));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -251,25 +296,54 @@ class _QuizzesPageState extends State<QuizzesPage> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed:
-                              quiz["status"] == "Completed"
-                                  ? null
-                                  : () {
-                                    final String title =
-                                        quiz["title"] as String;
-                                    final questions =
-                                        quizTitleToQuestions[title] ?? [];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => QuizPage(
-                                              quizTitle: title,
-                                              questions: questions,
-                                            ),
+                          onPressed: quiz["status"] == "Completed"
+                              ? null
+                              : () async {
+                                  final String title = quiz["title"] as String;
+                                  final questions = quizTitleToQuestions[title] ?? [];
+
+                                  // Push QuizPage and wait for a completion result.
+                                  final messenger = ScaffoldMessenger.of(context);
+                                  final navigator = Navigator.of(context);
+                                  final result = await navigator.push(
+                                    MaterialPageRoute(
+                                      builder: (context) => QuizPage(
+                                        quizTitle: title,
+                                        questions: questions,
+                                      ),
+                                    ),
+                                  );
+
+                                  // If a completion result is returned, mark this quiz Completed and persist score.
+                                  if (result != null) {
+                                    int? score;
+                                    if (result is Map && result['completed'] == true) {
+                                      score = result['score'] as int?;
+                                    }
+
+                                    setState(() {
+                                      final globalIndex = quizzes.indexWhere(
+                                          (q) => q['title'] == title);
+                                      if (globalIndex != -1) {
+                                        quizzes[globalIndex]['status'] = 'Completed';
+                                        quizzes[globalIndex]['score'] = score;
+                                      }
+                                    });
+
+                                    await _saveQuizProgress(title, 'Completed', score);
+
+                                    // Show feedback
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text(score != null
+                                            ? 'Quiz "$title" completed — Score: $score/${quizTitleToQuestions[title]?.length ?? ''}'
+                                            : 'Quiz "$title" completed'),
+                                        backgroundColor: Colors.green[700],
+                                        duration: const Duration(seconds: 2),
                                       ),
                                     );
-                                  },
+                                  }
+                                },
                           child: Text(
                             quiz["status"] == "Completed"
                                 ? "Done"

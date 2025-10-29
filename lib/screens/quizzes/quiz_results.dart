@@ -1,4 +1,3 @@
-import 'package:aid_iq/screens/main_pages/quizzes.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -325,13 +324,8 @@ class QuizResultsPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const QuizzesPage(),
-                    ),
-                    (route) => false,
-                  );
+                  // Pop the results page and return `true` to indicate completion.
+                  Navigator.pop(context, true);
                 },
                 child: Text(
                   "Back to Quizzes",
