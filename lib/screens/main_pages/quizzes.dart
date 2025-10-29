@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aid_iq/screens/quizzes/taking_quiz.dart'; // Import QuizPage
+import 'package:aid_iq/screens/quizzes/quiz_results.dart'; // Import QuizResultsPage
 import 'package:aid_iq/screens/quizzes/data/cpr_questions.dart'; // Import CPR questions
 import 'package:aid_iq/screens/quizzes/data/first_aid_intro_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/proper_bandaging_questions.dart';
@@ -26,41 +27,112 @@ class _QuizzesPageState extends State<QuizzesPage> {
   // State variables
   String selectedFilter = "All";
 
-  // Map quiz titles to their question maps for clearer routing
-  late final Map<String, List<Map<String, dynamic>>> quizTitleToQuestions = {
-    'CPR': cprQuestions.map((q) => q.toMap()).toList(),
-    'First Aid Introduction':
-        firstAidIntroductionQuestions.map((q) => q.toMap()).toList(),
-    'Proper Bandaging': properBandagingQuestions.map((q) => q.toMap()).toList(),
-    'Wound Cleaning': woundCleaningQuestions.map((q) => q.toMap()).toList(),
-    'R.I.C.E. (Treating Sprains)': riceQuestions.map((q) => q.toMap()).toList(),
-    'Strains': strainsQuestions.map((q) => q.toMap()).toList(),
-    'Animal Bites': animalBitesQuestions.map((q) => q.toMap()).toList(),
-    'Choking': chokingQuestions.map((q) => q.toMap()).toList(),
-    'Fainting': faintingQuestions.map((q) => q.toMap()).toList(),
-    'Seizure': seizureQuestions.map((q) => q.toMap()).toList(),
-    'First Aid Equipments':
-        firstAidEquipmentQuestions.map((q) => q.toMap()).toList(),
-    // Add other quizzes here as you create their data lists
-  };
+  // Lazy-loaded map: quiz questions are only converted when actually needed
+  // This prevents loading all quiz data at widget initialization
+  Map<String, List<Map<String, dynamic>>>? _quizTitleToQuestions;
+
+  // Get questions lazily - only convert when accessed
+  List<Map<String, dynamic>> _getQuestionsForQuiz(String title) {
+    _quizTitleToQuestions ??= {};
+
+    // Only convert if we haven't already cached this quiz's questions
+    if (!_quizTitleToQuestions!.containsKey(title)) {
+      switch (title) {
+        case 'CPR':
+          _quizTitleToQuestions![title] =
+              cprQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'First Aid Introduction':
+          _quizTitleToQuestions![title] =
+              firstAidIntroductionQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'Proper Bandaging':
+          _quizTitleToQuestions![title] =
+              properBandagingQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'Wound Cleaning':
+          _quizTitleToQuestions![title] =
+              woundCleaningQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'R.I.C.E. (Treating Sprains)':
+          _quizTitleToQuestions![title] =
+              riceQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'Strains':
+          _quizTitleToQuestions![title] =
+              strainsQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'Animal Bites':
+          _quizTitleToQuestions![title] =
+              animalBitesQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'Choking':
+          _quizTitleToQuestions![title] =
+              chokingQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'Fainting':
+          _quizTitleToQuestions![title] =
+              faintingQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'Seizure':
+          _quizTitleToQuestions![title] =
+              seizureQuestions.map((q) => q.toMap()).toList();
+          break;
+        case 'First Aid Equipments':
+          _quizTitleToQuestions![title] =
+              firstAidEquipmentQuestions.map((q) => q.toMap()).toList();
+          break;
+        default:
+          _quizTitleToQuestions![title] = [];
+          break;
+      }
+    }
+
+    return _quizTitleToQuestions![title] ?? [];
+  }
 
   // List of quizzes
   final List<Map<String, dynamic>> quizzes = [
-    {"title": "First Aid Introduction", "questions": 10, "status": "Ongoing", "score": null},
+    {
+      "title": "First Aid Introduction",
+      "questions": 10,
+      "status": "Ongoing",
+      "score": null,
+    },
     {"title": "CPR", "questions": 10, "status": "Ongoing", "score": null},
-    {"title": "Proper Bandaging", "questions": 10, "status": "Ongoing", "score": null},
-    {"title": "Wound Cleaning", "questions": 10, "status": "Ongoing", "score": null},
+    {
+      "title": "Proper Bandaging",
+      "questions": 10,
+      "status": "Ongoing",
+      "score": null,
+    },
+    {
+      "title": "Wound Cleaning",
+      "questions": 10,
+      "status": "Ongoing",
+      "score": null,
+    },
     {
       "title": "R.I.C.E. (Treating Sprains)",
       "questions": 10,
       "status": "Ongoing",
     },
     {"title": "Strains", "questions": 10, "status": "Ongoing", "score": null},
-    {"title": "Animal Bites", "questions": 10, "status": "Ongoing", "score": null},
+    {
+      "title": "Animal Bites",
+      "questions": 10,
+      "status": "Ongoing",
+      "score": null,
+    },
     {"title": "Choking", "questions": 10, "status": "Ongoing", "score": null},
     {"title": "Fainting", "questions": 10, "status": "Ongoing", "score": null},
     {"title": "Seizure", "questions": 10, "status": "Ongoing", "score": null},
-    {"title": "First Aid Equipments", "questions": 10, "status": "Ongoing", "score": null},
+    {
+      "title": "First Aid Equipments",
+      "questions": 10,
+      "status": "Ongoing",
+      "score": null,
+    },
   ];
 
   @override
@@ -81,7 +153,8 @@ class _QuizzesPageState extends State<QuizzesPage> {
           if (data.containsKey(title)) {
             final entry = data[title] as Map<String, dynamic>;
             q['status'] = entry['status'] ?? q['status'];
-            q['score'] = entry.containsKey('score') ? entry['score'] : q['score'];
+            q['score'] =
+                entry.containsKey('score') ? entry['score'] : q['score'];
           }
         }
       });
@@ -90,7 +163,12 @@ class _QuizzesPageState extends State<QuizzesPage> {
     }
   }
 
-  Future<void> _saveQuizProgress(String title, String status, int? score) async {
+  Future<void> _saveQuizProgress(
+    String title,
+    String status,
+    int? score, [
+    List<int?>? userAnswers,
+  ]) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('quiz_progress');
     Map<String, dynamic> data = {};
@@ -102,6 +180,7 @@ class _QuizzesPageState extends State<QuizzesPage> {
     data[title] = {
       'status': status,
       if (score != null) 'score': score,
+      if (userAnswers != null) 'userAnswers': userAnswers,
     };
     await prefs.setString('quiz_progress', json.encode(data));
   }
@@ -286,75 +365,236 @@ class _QuizzesPageState extends State<QuizzesPage> {
                             ],
                           ),
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                quiz["status"] == "Completed"
-                                    ? Colors.grey
-                                    : Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          onPressed: quiz["status"] == "Completed"
-                              ? null
-                              : () async {
-                                  final String title = quiz["title"] as String;
-                                  final questions = quizTitleToQuestions[title] ?? [];
-
-                                  // Push QuizPage and wait for a completion result.
-                                  final messenger = ScaffoldMessenger.of(context);
-                                  final navigator = Navigator.of(context);
-                                  final result = await navigator.push(
-                                    MaterialPageRoute(
-                                      builder: (context) => QuizPage(
-                                        quizTitle: title,
-                                        questions: questions,
-                                      ),
+                        // Show two buttons for completed quizzes, one button for ongoing
+                        quiz["status"] == "Completed"
+                            ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // See Results Button
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[300],
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
                                     ),
-                                  );
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    minimumSize: const Size(80, 36),
+                                  ),
+                                  onPressed: () async {
+                                    final String title =
+                                        quiz["title"] as String;
+                                    final questions = _getQuestionsForQuiz(
+                                      title,
+                                    );
 
-                                  // If a completion result is returned, mark this quiz Completed and persist score.
-                                  if (result != null) {
-                                    int? score;
-                                    if (result is Map && result['completed'] == true) {
-                                      score = result['score'] as int?;
+                                    // Load saved user answers
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    final jsonString = prefs.getString(
+                                      'quiz_progress',
+                                    );
+                                    List<int?>? userAnswers;
+                                    int? savedScore;
+
+                                    if (jsonString != null) {
+                                      try {
+                                        final data =
+                                            json.decode(jsonString)
+                                                as Map<String, dynamic>;
+                                        if (data.containsKey(title)) {
+                                          final entry =
+                                              data[title]
+                                                  as Map<String, dynamic>;
+                                          if (entry.containsKey(
+                                            'userAnswers',
+                                          )) {
+                                            final answersList =
+                                                entry['userAnswers'] as List;
+                                            userAnswers =
+                                                answersList
+                                                    .map((e) => e as int?)
+                                                    .toList();
+                                          }
+                                          savedScore = entry['score'] as int?;
+                                        }
+                                      } catch (_) {}
                                     }
+
+                                    // If we don't have saved answers, create empty list (user can still see questions)
+                                    userAnswers ??= List.filled(
+                                      questions.length,
+                                      null,
+                                    );
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => QuizResultsPage(
+                                              questions: questions,
+                                              userAnswers: userAnswers!,
+                                              score: savedScore ?? 0,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    "See Results",
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                // Retake Button
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFd84040),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    minimumSize: const Size(80, 36),
+                                  ),
+                                  onPressed: () async {
+                                    final String title =
+                                        quiz["title"] as String;
+                                    final questions = _getQuestionsForQuiz(
+                                      title,
+                                    );
+
+                                    final navigator = Navigator.of(context);
+                                    final result = await navigator.push(
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => QuizPage(
+                                              quizTitle: title,
+                                              questions: questions,
+                                            ),
+                                      ),
+                                    );
+
+                                    // Handle retake result
+                                    if (result != null && result is Map) {
+                                      if (result['completed'] == true) {
+                                        int? score = result['score'] as int?;
+                                        List<int?>? userAnswers =
+                                            result['userAnswers']
+                                                as List<int?>?;
+
+                                        setState(() {
+                                          final globalIndex = quizzes
+                                              .indexWhere(
+                                                (q) => q['title'] == title,
+                                              );
+                                          if (globalIndex != -1) {
+                                            quizzes[globalIndex]['status'] =
+                                                'Completed';
+                                            quizzes[globalIndex]['score'] =
+                                                score;
+                                          }
+                                        });
+
+                                        await _saveQuizProgress(
+                                          title,
+                                          'Completed',
+                                          score,
+                                          userAnswers,
+                                        );
+                                      }
+                                    }
+                                  },
+                                  child: Text(
+                                    "Retake",
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                            : ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: () async {
+                                final String title = quiz["title"] as String;
+                                final questions = _getQuestionsForQuiz(title);
+
+                                final messenger = ScaffoldMessenger.of(context);
+                                final navigator = Navigator.of(context);
+                                final result = await navigator.push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => QuizPage(
+                                          quizTitle: title,
+                                          questions: questions,
+                                        ),
+                                  ),
+                                );
+
+                                // If a completion result is returned, mark this quiz Completed and persist score.
+                                if (result != null && result is Map) {
+                                  if (result['completed'] == true) {
+                                    int? score = result['score'] as int?;
+                                    List<int?>? userAnswers =
+                                        result['userAnswers'] as List<int?>?;
 
                                     setState(() {
                                       final globalIndex = quizzes.indexWhere(
-                                          (q) => q['title'] == title);
+                                        (q) => q['title'] == title,
+                                      );
                                       if (globalIndex != -1) {
-                                        quizzes[globalIndex]['status'] = 'Completed';
+                                        quizzes[globalIndex]['status'] =
+                                            'Completed';
                                         quizzes[globalIndex]['score'] = score;
                                       }
                                     });
 
-                                    await _saveQuizProgress(title, 'Completed', score);
+                                    await _saveQuizProgress(
+                                      title,
+                                      'Completed',
+                                      score,
+                                      userAnswers,
+                                    );
 
                                     // Show feedback
                                     messenger.showSnackBar(
                                       SnackBar(
-                                        content: Text(score != null
-                                            ? 'Quiz "$title" completed — Score: $score/${quizTitleToQuestions[title]?.length ?? ''}'
-                                            : 'Quiz "$title" completed'),
+                                        content: Text(
+                                          score != null
+                                              ? 'Quiz "$title" completed — Score: $score/${questions.length}'
+                                              : 'Quiz "$title" completed',
+                                        ),
                                         backgroundColor: Colors.green[700],
                                         duration: const Duration(seconds: 2),
                                       ),
                                     );
                                   }
-                                },
-                          child: Text(
-                            quiz["status"] == "Completed"
-                                ? "Done"
-                                : "Take Test",
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
+                                }
+                              },
+                              child: Text(
+                                "Take Test",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
                       ],
                     ),
                   ),

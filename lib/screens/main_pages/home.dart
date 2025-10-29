@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:aid_iq/screens/main_pages/learn_more.dart';
+import 'package:aid_iq/widgets/main_layout.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,7 +29,7 @@ class _HomePageState extends State<HomePage> {
       try {
         final Map<String, dynamic> data = json.decode(jsonString);
         final List<Map<String, dynamic>> quizzes = [];
-        
+
         data.forEach((title, value) {
           if (value is Map<String, dynamic>) {
             quizzes.add({
@@ -41,8 +43,10 @@ class _HomePageState extends State<HomePage> {
         });
 
         // Sort by completed quizzes first and take most recent 3
-        quizzes.sort((a, b) => (b["completed"] ? 1 : 0) - (a["completed"] ? 1 : 0));
-        
+        quizzes.sort(
+          (a, b) => (b["completed"] ? 1 : 0) - (a["completed"] ? 1 : 0),
+        );
+
         setState(() {
           recentQuizzes = quizzes.take(3).toList();
         });
@@ -182,9 +186,11 @@ class _HomePageState extends State<HomePage> {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        // Example action: Show a snackbar
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Learn More clicked!')),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LearnMorePage(),
+                          ),
                         );
                       },
                       child: const Row(
@@ -203,27 +209,15 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 24),
 
-            // Quizzes Section
+            // Modules Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Quizzes',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                  Text(
-                    'See All',
-                    style: GoogleFonts.poppins(
-                      color: Color(0xFFd84040),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              child: Text(
+                'Modules',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -234,13 +228,41 @@ class _HomePageState extends State<HomePage> {
                 child: Row(
                   children: const [
                     _QuizCard(
-                      title: 'First Aid\nImportance',
+                      title: 'First Aid\nIntroduction',
                       icon: Icons.medical_services,
                     ),
                     SizedBox(width: 12),
-                    _QuizCard(title: 'CPR', icon: Icons.accessibility_new),
+                    _QuizCard(title: 'CPR', icon: Icons.favorite),
                     SizedBox(width: 12),
-                    _QuizCard(title: 'Proper\nBandaging', icon: Icons.healing),
+                    _QuizCard(
+                      title: 'Proper\nBandaging',
+                      icon: Icons.local_hospital,
+                    ),
+                    SizedBox(width: 12),
+                    _QuizCard(title: 'Wound\nCleaning', icon: Icons.healing),
+                    SizedBox(width: 12),
+                    _QuizCard(
+                      title: 'R.I.C.E.\n(Sprains)',
+                      icon: Icons.accessibility_new,
+                    ),
+                    SizedBox(width: 12),
+                    _QuizCard(title: 'Strains', icon: Icons.healing_rounded),
+                    SizedBox(width: 12),
+                    _QuizCard(title: 'Animal\nBites', icon: Icons.pets),
+                    SizedBox(width: 12),
+                    _QuizCard(title: 'Choking', icon: Icons.warning),
+                    SizedBox(width: 12),
+                    _QuizCard(title: 'Fainting', icon: Icons.sick),
+                    SizedBox(width: 12),
+                    _QuizCard(
+                      title: 'Seizure',
+                      icon: Icons.medical_information,
+                    ),
+                    SizedBox(width: 12),
+                    _QuizCard(
+                      title: 'First Aid\nEquipments',
+                      icon: Icons.medical_services,
+                    ),
                   ],
                 ),
               ),
@@ -251,12 +273,35 @@ class _HomePageState extends State<HomePage> {
             // Recent Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'Recent',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Recent',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      // Find the MainLayout ancestor and switch to quizzes tab (index 1)
+                      final mainLayout =
+                          context.findAncestorStateOfType<MainLayoutState>();
+                      if (mainLayout != null) {
+                        mainLayout.switchToTab(1);
+                      }
+                    },
+                    child: Text(
+                      'See All',
+                      style: GoogleFonts.poppins(
+                        color: Color(0xFFd84040),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),
@@ -295,32 +340,48 @@ class _QuizCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 130,
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.green[700],
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 4)),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.white, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Colors.white,
-            ),
+    return GestureDetector(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Modules coming soon!', style: GoogleFonts.poppins()),
+            backgroundColor: Color(0xFFd84040),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
           ),
-        ],
+        );
+      },
+      child: Container(
+        width: 130,
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.green[700],
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -378,7 +439,7 @@ class _RecentQuizCard extends StatelessWidget {
               ],
             ),
           ),
-            if (completed)
+          if (completed)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(

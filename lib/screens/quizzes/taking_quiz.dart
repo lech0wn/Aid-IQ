@@ -216,7 +216,23 @@ class _QuizPageState extends State<QuizPage> {
                                 );
 
                                 if (!mounted) return;
-                                navigator.pop(result ?? true);
+                                
+                                // Check if user wants to retake the quiz
+                                if (result is Map && result['retake'] == true) {
+                                  // Reset quiz state and restart
+                                  setState(() {
+                                    currentQuestionIndex = 0;
+                                    selectedOptions = List.filled(widget.questions.length, null);
+                                  });
+                                  // Don't pop - stay on quiz page to retake
+                                } else {
+                                  // User completed or went back, pop with result
+                                  navigator.pop(result ?? {
+                                    'completed': true,
+                                    'score': score,
+                                    'userAnswers': selectedOptions,
+                                  });
+                                }
                               }
                             },
                     child: Text(
