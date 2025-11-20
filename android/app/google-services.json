@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1092273154641",
+    "project_id": "aid-iq-ae64b",
+    "storage_bucket": "aid-iq-ae64b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092273154641:android:80177c74408eebc14b2670",
+        "android_client_info": {
+          "package_name": "com.example.aid_iq_demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA64pi4i9Fsz7EXpyVvdpfqr2weKxNaNpE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
