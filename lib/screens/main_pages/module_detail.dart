@@ -7,10 +7,7 @@ import 'package:aid_iq/utils/logger.dart';
 class ModuleDetailPage extends StatefulWidget {
   final Map<String, dynamic> module;
 
-  const ModuleDetailPage({
-    super.key,
-    required this.module,
-  });
+  const ModuleDetailPage({super.key, required this.module});
 
   @override
   State<ModuleDetailPage> createState() => _ModuleDetailPageState();
@@ -30,7 +27,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     _startTime = DateTime.now();
     _loadModuleProgress();
     _scrollController.addListener(_onScroll);
-    
+
     // Calculate estimated reading time (rough estimate: 200 words per minute)
     final content = widget.module['content'] ?? '';
     final wordCount = content.split(' ').length;
@@ -48,14 +45,16 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   Future<void> _loadModuleProgress() async {
     try {
       final progress = await _moduleService.getUserModuleProgress();
-      final moduleProgress = progress['moduleProgress'] as Map<String, dynamic>? ?? {};
-      
+      final moduleProgress =
+          progress['moduleProgress'] as Map<String, dynamic>? ?? {};
+
       final moduleId = widget.module['id'] as String? ?? '';
       final moduleData = moduleProgress[moduleId] as Map<String, dynamic>?;
-      
+
       setState(() {
         _isCompleted = moduleData?['completed'] == true;
-        _scrollPosition = (moduleData?['scrollPosition'] as num?)?.toDouble() ?? 0.0;
+        _scrollPosition =
+            (moduleData?['scrollPosition'] as num?)?.toDouble() ?? 0.0;
       });
 
       // Restore scroll position if exists
@@ -87,7 +86,8 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     if (_startTime == null) return;
 
     final readingTime = DateTime.now().difference(_startTime!).inMinutes;
-    final actualReadingTime = readingTime > 0 ? readingTime : _estimatedReadingTime;
+    final actualReadingTime =
+        readingTime > 0 ? readingTime : _estimatedReadingTime;
 
     try {
       await _moduleService.markModuleCompleted(
@@ -95,7 +95,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
         widget.module['title'] ?? 'Module',
         actualReadingTime,
       );
-      
+
       if (!mounted) return;
       setState(() {
         _isCompleted = true;
@@ -105,67 +105,75 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
       if (!mounted) return;
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 32),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Module Completed!',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
+        builder:
+            (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Congratulations! You\'ve completed "${widget.module['title']}".',
-                style: GoogleFonts.poppins(fontSize: 14),
-              ),
-              const SizedBox(height: 12),
-              Row(
+              title: Row(
                 children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Reading time: $actualReadingTime min',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                  Icon(Icons.check_circle, color: Colors.green, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Module Completed!',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (!mounted) return;
-                Navigator.pop(context); // Close dialog
-                if (!mounted) return;
-                Navigator.pop(context, true); // Return to home with refresh flag
-              },
-              child: Text(
-                'Continue Learning',
-                style: GoogleFonts.poppins(
-                  color: const Color(0xFFd84040),
-                  fontWeight: FontWeight.bold,
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Congratulations! You\'ve completed "${widget.module['title']}".',
+                    style: GoogleFonts.poppins(fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Reading time: $actualReadingTime min',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    if (!mounted) return;
+                    Navigator.pop(context); // Close dialog
+                    if (!mounted) return;
+                    Navigator.pop(
+                      context,
+                      true,
+                    ); // Return to home with refresh flag
+                  },
+                  child: Text(
+                    'Continue Learning',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFFd84040),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -229,12 +237,10 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: _scrollPosition > 0 ? _scrollPosition : 0.0,
-                child: Container(
-                  color: const Color(0xFFd84040),
-                ),
+                child: Container(color: const Color(0xFFd84040)),
               ),
             ),
-          
+
           // Completion badge
           if (_isCompleted)
             Container(
@@ -280,13 +286,16 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFd84040).withOpacity(0.1),
+                        color: const Color(0xFFd84040).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, 
-                            color: const Color(0xFFd84040), size: 20),
+                          Icon(
+                            Icons.info_outline,
+                            color: const Color(0xFFd84040),
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -301,12 +310,15 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                         ],
                       ),
                     ),
-                  
+
                   if (description.isNotEmpty) const SizedBox(height: 20),
 
                   // Reading time estimate
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue[50],
                       borderRadius: BorderRadius.circular(8),
@@ -314,7 +326,11 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.access_time, size: 16, color: Colors.blue[700]),
+                        Icon(
+                          Icons.access_time,
+                          size: 16,
+                          color: Colors.blue[700],
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Estimated reading time: $_estimatedReadingTime min',
@@ -361,7 +377,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
 
                   if (pictures.isNotEmpty) const SizedBox(height: 20),
 

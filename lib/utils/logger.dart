@@ -9,11 +9,11 @@ final appLogger = Logger(
     lineLength: 50,
     colors: true,
     printEmojis: true,
-    printTime: true,
+    dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
   ),
 );
 
 /// Simple logger for production (less verbose)
 final productionLogger = Logger(
-  printer: SimplePrinter(colors: false, printTime: false),
+  printer: SimplePrinter(colors: false),
 );
