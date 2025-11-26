@@ -1,5 +1,7 @@
 import 'package:aid_iq/screens/legal_pages/disclaimer.dart';
 import 'package:aid_iq/screens/login.dart';
+import 'package:aid_iq/services/auth_service.dart';
+import 'package:aid_iq/utils/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -15,7 +17,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
   bool _imagePrecached = false;
+  bool _isLoading = false;
 
   @override
   void didChangeDependencies() {
@@ -283,32 +287,103 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              // Navigate to Disclaimer Page
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const DisclaimerPage(),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed:
+                              _isLoading
+                                  ? null
+                                  : () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      setState(() {
+                                        _isLoading = true;
+                                      });
+
+                                      try {
+                                        final user = await _authService
+                                            .signUpWithEmail(
+                                              emailController.text.trim(),
+                                              passwordController.text,
+                                              usernameController.text.trim(),
+                                            );
+
+                                        if (user != null) {
+                                          if (!mounted) return;
+                                          // Navigate to Disclaimer Page after successful signup
+                                          final navigator = Navigator.of(
+                                            context,
+                                          );
+                                          navigator.pushReplacement(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      const DisclaimerPage(),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        // Extract error message
+                                        String errorMessage =
+                                            'Sign up failed. Please try again.';
+                                        if (e is String) {
+                                          errorMessage = e;
+                                        } else {
+                                          errorMessage = e.toString();
+                                        }
+
+                                        if (!mounted) return;
+                                        final messenger = ScaffoldMessenger.of(
+                                          context,
+                                        );
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              errorMessage,
+                                              style: GoogleFonts.poppins(),
+                                            ),
+                                            backgroundColor: Colors.red,
+                                            duration: const Duration(
+                                              seconds: 4,
+                                            ),
+                                          ),
+                                        );
+
+                                        // Also print to console for debugging
+                                        appLogger.e('Signup error', error: e);
+                                      } finally {
+                                        if (mounted) {
+                                          setState(() {
+                                            _isLoading = false;
+                                          });
+                                        }
+                                      }
+                                    }
+                                  },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFD84040),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
+                            disabledBackgroundColor: Colors.grey,
                           ),
-                          child: Text(
-                            "Register",
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
+                          child:
+                              _isLoading
+                                  ? SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                  : Text(
+                                    "Register",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                         ),
                       ),
                       const SizedBox(height: 20),

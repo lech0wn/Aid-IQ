@@ -2,9 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aid_iq/screens/legal_pages/terms_and_conditions.dart';
 import 'package:aid_iq/screens/main_pages/edit_profile.dart';
+import 'package:aid_iq/services/auth_service.dart';
+import 'package:aid_iq/services/quiz_service.dart';
+import 'package:aid_iq/utils/logger.dart';
+import 'package:intl/intl.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final QuizService _quizService = QuizService();
+  int _quizzesTaken = 0;
+  int _streak = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserStats();
+  }
+
+  Future<void> _loadUserStats() async {
+    try {
+      final progress = await _quizService.getUserQuizProgress();
+      setState(() {
+        _quizzesTaken = progress['quizzesTaken'] ?? 0;
+        _streak = progress['streak'] ?? 0;
+        _isLoading = false;
+      });
+    } catch (e) {
+      appLogger.e('Error loading user stats', error: e);
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,44 +100,63 @@ class ProfilePage extends StatelessWidget {
                         // User Information
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            children: [
-                              Text(
-                                'UserName',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                          child: Builder(
+                            builder: (context) {
+                              final authService = AuthService();
+                              final user = authService.currentUser;
+                              final displayName = user?.displayName ?? 'User';
+                              final email = user?.email ?? 'No email';
+                              final creationDate = user?.metadata.creationTime;
+                              final joinedText =
+                                  creationDate != null
+                                      ? 'Joined ${DateFormat('MMM yyyy').format(creationDate)}'
+                                      : '';
+
+                              return Column(
                                 children: [
                                   Text(
-                                    '1234@email.com',
+                                    displayName,
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.black87,
                                     ),
                                   ),
-                                  Text(
-                                    ' • ',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  Text(
-                                    'Joined May 2077',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          email,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (joinedText.isNotEmpty) ...[
+                                        Text(
+                                          ' • ',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        Text(
+                                          joinedText,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ],
-                              ),
-                            ],
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -115,32 +170,43 @@ class ProfilePage extends StatelessWidget {
                               color: const Color(0xFFd84040),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Expanded(
-                                  child: _buildStatItem(
-                                    'QUIZZES',
-                                    '12',
-                                    Icons.menu_book,
-                                    Colors.lightBlue,
-                                  ),
-                                ),
-                                Container(
-                                  height: 50,
-                                  width: 1,
-                                  color: Colors.white,
-                                ),
-                                Expanded(
-                                  child: _buildStatItem(
-                                    'STREAK',
-                                    '100',
-                                    Icons.local_fire_department,
-                                    Colors.orange,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            child:
+                                _isLoading
+                                    ? Center(
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                    : Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Expanded(
+                                          child: _buildStatItem(
+                                            'QUIZZES',
+                                            '$_quizzesTaken',
+                                            Icons.menu_book,
+                                            Colors.lightBlue,
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 50,
+                                          width: 1,
+                                          color: Colors.white,
+                                        ),
+                                        Expanded(
+                                          child: _buildStatItem(
+                                            'STREAK',
+                                            '$_streak',
+                                            Icons.local_fire_department,
+                                            Colors.orange,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -349,14 +415,30 @@ class ProfilePage extends StatelessWidget {
                     // Log Out Button
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Implement actual logout functionality
-                          // Clear user data, navigate to login/signup screen, etc.
+                        onPressed: () async {
                           Navigator.of(context).pop();
-                          // Navigate to signup/login screen
-                          Navigator.of(
-                            context,
-                          ).pushNamedAndRemoveUntil('/', (route) => false);
+                          try {
+                            final authService = AuthService();
+                            await authService.signOut();
+                            // Navigate to signup/login screen
+                            if (context.mounted) {
+                              Navigator.of(
+                                context,
+                              ).pushNamedAndRemoveUntil('/', (route) => false);
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Error logging out: $e',
+                                    style: GoogleFonts.poppins(),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFd84040),

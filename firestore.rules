@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - users can read/write their own document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Quizzes collection - authenticated users can read and write
+    // (Write allowed for initial quiz upload from app)
+    match /quizzes/{quizId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Modules collection - authenticated users can read, write for initial upload
+    match /modules/{moduleId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null; // For initial module upload
+    }
+  }
+}
+
