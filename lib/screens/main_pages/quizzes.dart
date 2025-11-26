@@ -39,6 +39,36 @@ class _QuizzesPageState extends State<QuizzesPage> {
   // This prevents loading all quiz data at widget initialization
   Map<String, List<Map<String, dynamic>>>? _quizTitleToQuestions;
 
+  // Get short description for quiz based on title
+  String _getQuizDescription(String title) {
+    switch (title) {
+      case 'First Aid Introduction':
+        return 'Learn the basics of first aid and emergency response.';
+      case 'CPR':
+        return 'Cardiopulmonary Resuscitation techniques and procedures.';
+      case 'Proper Bandaging':
+        return 'Learn how to properly bandage wounds and injuries.';
+      case 'Wound Cleaning':
+        return 'Proper wound cleaning and disinfection procedures.';
+      case 'R.I.C.E. (Treating Sprains)':
+        return 'Rest, Ice, Compression, Elevation for treating sprains.';
+      case 'Strains':
+        return 'Understanding and treating muscle strains effectively.';
+      case 'Animal Bites':
+        return 'First aid procedures for animal bite injuries.';
+      case 'Choking':
+        return 'Heimlich maneuver and choking emergency response.';
+      case 'Fainting':
+        return 'First aid steps for fainting and loss of consciousness.';
+      case 'Seizure':
+        return 'Proper first aid response for seizure episodes.';
+      case 'First Aid Equipments':
+        return 'Essential first aid equipment and their uses.';
+      default:
+        return 'Test your knowledge with this first aid quiz.';
+    }
+  }
+
   // Get questions lazily - load from Firestore first, fallback to local files
   Future<List<Map<String, dynamic>>> _getQuestionsForQuiz(String title) async {
     _quizTitleToQuestions ??= {};
@@ -520,7 +550,7 @@ class _QuizzesPageState extends State<QuizzesPage> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                                        _getQuizDescription(quiz["title"]),
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
                                           color: Colors.grey[600],
