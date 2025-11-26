@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:aid_iq/services/auth_service.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -9,16 +10,29 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController usernameController = TextEditingController(
-    text: 'User',
-  );
-  final TextEditingController emailController = TextEditingController(
-    text: 'Username@example.com',
-  );
-  final TextEditingController passwordController = TextEditingController(
-    text: '************',
-  );
+  final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  bool _isPasswordChanged = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() {
+    final user = _authService.currentUser;
+    if (user != null) {
+      usernameController.text = user.displayName ?? '';
+      emailController.text = user.email ?? '';
+      passwordController.text = ''; // Don't show password
+    }
+  }
 
   @override
   void dispose() {
@@ -79,176 +93,299 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 80),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 80),
 
-                        // Username Field
-                        Text(
-                          'Username',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: usernameController,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                          // Username Field
+                          Text(
+                            'Username',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey[600],
                             ),
-                            focusedBorder: UnderlineInputBorder(
-                              borderSide: const BorderSide(
-                                color: Color(0xFFd84040),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: usernameController,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Enter your username',
+                              hintStyle: GoogleFonts.poppins(
+                                color: Colors.grey[400],
                               ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Email Field
-                        Text(
-                          'Email',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: UnderlineInputBorder(
-                              borderSide: const BorderSide(
-                                color: Color(0xFFd84040),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Edit Password Field
-                        Text(
-                          'Edit Password',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Stack(
-                          children: [
-                            TextFormField(
-                              controller: passwordController,
-                              obscureText: _obscurePassword,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                              decoration: InputDecoration(
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
+                              enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
                                 ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFd84040),
-                                  ),
+                              ),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFd84040),
                                 ),
                               ),
                             ),
-                            // Edit Password Icon (right side)
-                            Positioned(
-                              right: 8,
-                              top: 12,
-                              child: GestureDetector(
-                                onTap: () {
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your username';
+                              }
+                              if (RegExp(
+                                r'[!@#\$%^&*(),.?":{}|<>]',
+                              ).hasMatch(value)) {
+                                return 'No special characters allowed';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Email Field
+                          Text(
+                            'Email',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Enter your email',
+                              hintStyle: GoogleFonts.poppins(
+                                color: Colors.grey[400],
+                              ),
+                              enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFd84040),
+                                ),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!RegExp(
+                                r'^[^@]+@[^@]+\.[^@]+',
+                              ).hasMatch(value)) {
+                                return 'Enter a valid email address';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Edit Password Field
+                          Text(
+                            'New Password (leave empty to keep current)',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: passwordController,
+                            obscureText: _obscurePassword,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Enter new password',
+                              hintStyle: GoogleFonts.poppins(
+                                color: Colors.grey[400],
+                              ),
+                              enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFd84040),
+                                ),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
                                   setState(() {
                                     _obscurePassword = !_obscurePassword;
-                                    if (!_obscurePassword) {
-                                      // Clear the masked password to show empty field
-                                      passwordController.clear();
-                                    } else {
-                                      // Restore masked password when hiding
-                                      passwordController.text = '************';
-                                    }
                                   });
                                 },
-                                child: Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFFd84040),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.edit,
-                                    color: Color(0xFFd84040),
-                                    size: 14,
-                                  ),
-                                ),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 40),
-
-                        // Save Changes Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // TODO: Implement save functionality
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Profile updated successfully!',
-                                    style: GoogleFonts.poppins(),
-                                  ),
-                                  backgroundColor: Colors.green[700],
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                              Navigator.pop(context);
+                            onChanged: (value) {
+                              setState(() {
+                                _isPasswordChanged = value.isNotEmpty;
+                              });
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFd84040),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                            validator: (value) {
+                              if (value != null &&
+                                  value.isNotEmpty &&
+                                  value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 40),
+
+                          // Save Changes Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed:
+                                  _isLoading
+                                      ? null
+                                      : () async {
+                                        if (_formKey.currentState!.validate()) {
+                                          setState(() {
+                                            _isLoading = true;
+                                          });
+
+                                          try {
+                                            final user =
+                                                _authService.currentUser;
+                                            if (user == null) {
+                                              throw 'No user is currently signed in.';
+                                            }
+
+                                            // Update username if changed
+                                            final currentDisplayName =
+                                                user.displayName ?? '';
+                                            if (usernameController.text
+                                                    .trim() !=
+                                                currentDisplayName) {
+                                              await _authService
+                                                  .updateDisplayName(
+                                                    usernameController.text
+                                                        .trim(),
+                                                  );
+                                            }
+
+                                            // Update email if changed
+                                            final currentEmail =
+                                                user.email ?? '';
+                                            if (emailController.text.trim() !=
+                                                currentEmail) {
+                                              await _authService.updateEmail(
+                                                emailController.text.trim(),
+                                              );
+                                            }
+
+                                            // Update password if provided
+                                            if (_isPasswordChanged &&
+                                                passwordController
+                                                    .text
+                                                    .isNotEmpty) {
+                                              await _authService.updatePassword(
+                                                passwordController.text,
+                                              );
+                                            }
+
+                                            if (!mounted) return;
+                                            final messenger =
+                                                ScaffoldMessenger.of(context);
+                                            messenger.showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Profile updated successfully!',
+                                                  style: GoogleFonts.poppins(),
+                                                ),
+                                                backgroundColor:
+                                                    Colors.green[700],
+                                                duration: const Duration(
+                                                  seconds: 2,
+                                                ),
+                                              ),
+                                            );
+                                            final navigator = Navigator.of(
+                                              context,
+                                            );
+                                            navigator.pop();
+                                          } catch (e) {
+                                            if (!mounted) return;
+                                            final messenger =
+                                                ScaffoldMessenger.of(context);
+                                            messenger.showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  e.toString(),
+                                                  style: GoogleFonts.poppins(),
+                                                ),
+                                                backgroundColor: Colors.red,
+                                                duration: const Duration(
+                                                  seconds: 3,
+                                                ),
+                                              ),
+                                            );
+                                          } finally {
+                                            if (mounted) {
+                                              setState(() {
+                                                _isLoading = false;
+                                              });
+                                            }
+                                          }
+                                        }
+                                      },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFd84040),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                disabledBackgroundColor: Colors.grey,
                               ),
-                            ),
-                            child: Text(
-                              'Save Changes',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                              child:
+                                  _isLoading
+                                      ? SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                        ),
+                                      )
+                                      : Text(
+                                        'Save Changes',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                          const SizedBox(height: 24),
+                        ],
+                      ),
                     ),
                   ),
                 ),

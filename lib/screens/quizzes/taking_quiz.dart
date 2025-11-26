@@ -194,8 +194,11 @@ class _QuizPageState extends State<QuizPage> {
                                 // Calculate score
                                 int score = 0;
                                 for (int i = 0; i < widget.questions.length; i++) {
-                                  if (selectedOptions[i] ==
-                                      widget.questions[i]['correctAnswerIndex']) {
+                                  // Check both field names for compatibility
+                                  final correctIndex = widget.questions[i]['correctOptionIndex'] ?? 
+                                                       widget.questions[i]['correctAnswerIndex'];
+                                  if (selectedOptions[i] != null && 
+                                      selectedOptions[i] == correctIndex) {
                                     score++;
                                   }
                                 }

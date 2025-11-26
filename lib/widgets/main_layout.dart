@@ -12,11 +12,13 @@ class MainLayout extends StatefulWidget {
 
 class MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
+  int _homeRefreshKey = 0;
+  int _quizzesRefreshKey = 0;
 
-  // List of pages for navigation
-  final List<Widget> _pages = [
-    const HomePage(),
-    const QuizzesPage(),
+  // List of pages for navigation - using keys to force refresh
+  List<Widget> get _pages => [
+    HomePage(key: ValueKey('home_$_homeRefreshKey')),
+    QuizzesPage(key: ValueKey('quizzes_$_quizzesRefreshKey')),
     const ProfilePage(),
   ];
 
@@ -24,6 +26,19 @@ class MainLayoutState extends State<MainLayout> {
     setState(() {
       _selectedIndex = index;
     });
+    
+    // Refresh the home page when switching to it
+    if (index == 0) {
+      setState(() {
+        _homeRefreshKey++;
+      });
+    }
+    // Refresh the quizzes page when switching to it
+    if (index == 1) {
+      setState(() {
+        _quizzesRefreshKey++;
+      });
+    }
   }
 
   // Public method to switch tabs from child widgets

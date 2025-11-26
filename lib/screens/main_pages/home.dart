@@ -4,6 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:aid_iq/screens/main_pages/learn_more.dart';
 import 'package:aid_iq/widgets/main_layout.dart';
+import 'package:aid_iq/services/auth_service.dart';
+import 'package:aid_iq/services/quiz_service.dart';
+import 'package:aid_iq/services/module_service.dart';
+import 'package:aid_iq/screens/main_pages/module_detail.dart';
+import 'package:aid_iq/utils/logger.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,45 +19,165 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String userName = "Annissa Balaga";
+  String userName = "User";
   List<Map<String, dynamic>> recentQuizzes = [];
+  List<Map<String, dynamic>> modules = [];
+  final AuthService _authService = AuthService();
+  final QuizService _quizService = QuizService();
+  final ModuleService _moduleService = ModuleService();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _loadRecentQuizzes();
+    _loadModules();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Public method to refresh data (called from MainLayout)
+  void refreshData() {
+    _loadRecentQuizzes();
+    _loadModules();
+  }
+
+  Future<void> _loadModules() async {
+    try {
+      final loadedModules = await _moduleService.getAllModules();
+      final userProgress = await _moduleService.getUserModuleProgress();
+
+      // Safely convert Firestore data to proper types
+      final moduleProgressData = userProgress['moduleProgress'];
+      Map<String, dynamic> moduleProgress = {};
+      if (moduleProgressData != null && moduleProgressData is Map) {
+        moduleProgress = Map<String, dynamic>.from(moduleProgressData);
+      }
+
+      // Enhance modules with progress data
+      final enhancedModules =
+          loadedModules.map((module) {
+            final moduleId = module['id'] as String? ?? '';
+            final progressData = moduleProgress[moduleId];
+            // Safely convert Firestore map to Map<String, dynamic>
+            Map<String, dynamic>? progress;
+            if (progressData != null && progressData is Map) {
+              progress = Map<String, dynamic>.from(progressData);
+            }
+            return {
+              ...module,
+              'isCompleted': progress?['completed'] == true,
+              'progress': progress,
+            };
+          }).toList();
+
+      setState(() {
+        modules = enhancedModules;
+      });
+    } catch (e) {
+      appLogger.e('Error loading modules', error: e);
+    }
+  }
+
+  void _loadUserData() {
+    final user = _authService.currentUser;
+    if (user != null) {
+      setState(() {
+        userName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
+      });
+    }
   }
 
   Future<void> _loadRecentQuizzes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString('quiz_progress');
-    if (jsonString != null) {
-      try {
-        final Map<String, dynamic> data = json.decode(jsonString);
-        final List<Map<String, dynamic>> quizzes = [];
+    try {
+      // Load user's quiz progress from Firestore
+      final userProgress = await _quizService.getUserQuizProgress();
+      final quizProgress =
+          userProgress['quizProgress'] as Map<String, dynamic>? ?? {};
 
-        data.forEach((title, value) {
-          if (value is Map<String, dynamic>) {
-            quizzes.add({
-              "title": title,
-              "questions": 10,
-              "completed": value['status'] == 'Completed',
-              "score": value['score'],
-              "icon": _getIconForQuiz(title),
-            });
+      // Filter to only completed quizzes
+      final List<Map<String, dynamic>> completedQuizzes = [];
+
+      quizProgress.forEach((title, progress) {
+        if (progress is Map<String, dynamic> && progress['completed'] == true) {
+          completedQuizzes.add({
+            "title": title,
+            "questions": progress['totalQuestions'] ?? 10,
+            "completed": true,
+            "score": progress['score'],
+            "icon": _getIconForQuiz(title),
+            "completedAt":
+                progress['completedAt'], // For sorting by most recent
+          });
+        }
+      });
+
+      // Sort by most recently completed (newest first)
+      completedQuizzes.sort((a, b) {
+        final aDate = a['completedAt'];
+        final bDate = b['completedAt'];
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+
+        // Handle Firestore Timestamp
+        try {
+          if (aDate is Timestamp && bDate is Timestamp) {
+            return bDate.compareTo(aDate); // Most recent first
           }
-        });
+          // Fallback: if it's already a DateTime or other format
+          return 0;
+        } catch (e) {
+          return 0;
+        }
+      });
 
-        // Sort by completed quizzes first and take most recent 3
-        quizzes.sort(
-          (a, b) => (b["completed"] ? 1 : 0) - (a["completed"] ? 1 : 0),
-        );
+      // Take most recent 3 completed quizzes
+      setState(() {
+        recentQuizzes = completedQuizzes.take(3).toList();
+      });
+    } catch (e) {
+      appLogger.e('Error loading recent quizzes', error: e);
+      // Fallback to SharedPreferences if Firestore fails
+      final prefs = await SharedPreferences.getInstance();
+      final user = _authService.currentUser;
+      final userId = user?.uid ?? 'anonymous';
+      final jsonString = prefs.getString('quiz_progress_$userId');
+      if (jsonString != null) {
+        try {
+          final Map<String, dynamic> data = json.decode(jsonString);
+          final List<Map<String, dynamic>> quizzes = [];
 
-        setState(() {
-          recentQuizzes = quizzes.take(3).toList();
-        });
-      } catch (e) {
-        // Handle parse errors silently
+          data.forEach((title, value) {
+            if (value is Map<String, dynamic> &&
+                value['status'] == 'Completed') {
+              quizzes.add({
+                "title": title,
+                "questions": 10,
+                "completed": true,
+                "score": value['score'],
+                "icon": _getIconForQuiz(title),
+              });
+            }
+          });
+
+          setState(() {
+            recentQuizzes = quizzes.take(3).toList();
+          });
+        } catch (e) {
+          // Handle parse errors silently
+        }
       }
     }
   }
@@ -132,12 +258,22 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const TextField(
+                child: TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search for a quiz',
+                    hintText: 'Search quizzes and modules',
                     border: InputBorder.none,
-                    prefixIcon: Icon(Icons.search, color: Colors.grey),
-                    contentPadding: EdgeInsets.symmetric(vertical: 16),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    suffixIcon:
+                        _searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            )
+                            : null,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -223,49 +359,94 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: const [
-                    _QuizCard(
-                      title: 'First Aid\nIntroduction',
-                      icon: Icons.medical_services,
-                    ),
-                    SizedBox(width: 12),
-                    _QuizCard(title: 'CPR', icon: Icons.favorite),
-                    SizedBox(width: 12),
-                    _QuizCard(
-                      title: 'Proper\nBandaging',
-                      icon: Icons.local_hospital,
-                    ),
-                    SizedBox(width: 12),
-                    _QuizCard(title: 'Wound\nCleaning', icon: Icons.healing),
-                    SizedBox(width: 12),
-                    _QuizCard(
-                      title: 'R.I.C.E.\n(Sprains)',
-                      icon: Icons.accessibility_new,
-                    ),
-                    SizedBox(width: 12),
-                    _QuizCard(title: 'Strains', icon: Icons.healing_rounded),
-                    SizedBox(width: 12),
-                    _QuizCard(title: 'Animal\nBites', icon: Icons.pets),
-                    SizedBox(width: 12),
-                    _QuizCard(title: 'Choking', icon: Icons.warning),
-                    SizedBox(width: 12),
-                    _QuizCard(title: 'Fainting', icon: Icons.sick),
-                    SizedBox(width: 12),
-                    _QuizCard(
-                      title: 'Seizure',
-                      icon: Icons.medical_information,
-                    ),
-                    SizedBox(width: 12),
-                    _QuizCard(
-                      title: 'First Aid\nEquipments',
-                      icon: Icons.medical_services,
-                    ),
-                  ],
-                ),
-              ),
+              child:
+                  modules.isEmpty
+                      ? Container(
+                        height: 120,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Loading modules...',
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      )
+                      : Builder(
+                        builder: (context) {
+                          // Filter modules based on search query
+                          final filteredModules =
+                              _searchQuery.isEmpty
+                                  ? modules
+                                  : modules.where((module) {
+                                    final title =
+                                        (module['title'] ?? '')
+                                            .toString()
+                                            .toLowerCase();
+                                    return title.contains(_searchQuery);
+                                  }).toList();
+
+                          if (filteredModules.isEmpty &&
+                              _searchQuery.isNotEmpty) {
+                            return Container(
+                              height: 120,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'No modules found',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children:
+                                  filteredModules.map((module) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: _ModuleCard(
+                                        module: module,
+                                        icon: _getIconForModule(
+                                          module['title'] ?? '',
+                                        ),
+                                        onTap: () async {
+                                          final result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) => ModuleDetailPage(
+                                                    module: module,
+                                                  ),
+                                            ),
+                                          );
+                                          // Refresh modules if completed
+                                          if (result == true) {
+                                            _loadModules();
+                                          }
+                                        },
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          );
+                        },
+                      ),
             ),
 
             const SizedBox(height: 24),
@@ -307,23 +488,71 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children:
-                    recentQuizzes.map((quiz) {
-                      return Column(
-                        children: [
-                          _RecentQuizCard(
-                            title: quiz["title"],
-                            questions: quiz["questions"],
-                            completed: quiz["completed"],
-                            icon: quiz["icon"],
-                            score: quiz["score"],
+              child:
+                  recentQuizzes.isEmpty
+                      ? Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Center(
+                          child: Text(
+                            'No completed quizzes yet.\nStart taking quizzes to see them here!',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                        ],
-                      );
-                    }).toList(),
-              ),
+                        ),
+                      )
+                      : Builder(
+                        builder: (context) {
+                          // Filter recent quizzes based on search query
+                          final filteredRecentQuizzes =
+                              _searchQuery.isEmpty
+                                  ? recentQuizzes
+                                  : recentQuizzes.where((quiz) {
+                                    final title =
+                                        (quiz['title'] ?? '')
+                                            .toString()
+                                            .toLowerCase();
+                                    return title.contains(_searchQuery);
+                                  }).toList();
+
+                          if (filteredRecentQuizzes.isEmpty &&
+                              _searchQuery.isNotEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Center(
+                                child: Text(
+                                  'No quizzes found',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children:
+                                filteredRecentQuizzes.map((quiz) {
+                                  return Column(
+                                    children: [
+                                      _RecentQuizCard(
+                                        title: quiz["title"],
+                                        questions: quiz["questions"],
+                                        completed: quiz["completed"],
+                                        icon: quiz["icon"],
+                                        score: quiz["score"],
+                                      ),
+                                      const SizedBox(height: 12),
+                                    ],
+                                  );
+                                }).toList(),
+                          );
+                        },
+                      ),
             ),
             const SizedBox(height: 24),
           ],
@@ -331,31 +560,60 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  IconData _getIconForModule(String title) {
+    if (title.toLowerCase().contains('first aid')) {
+      return Icons.medical_services;
+    } else if (title.toLowerCase().contains('cpr')) {
+      return Icons.favorite;
+    } else if (title.toLowerCase().contains('bandag')) {
+      return Icons.local_hospital;
+    } else if (title.toLowerCase().contains('wound')) {
+      return Icons.healing;
+    } else if (title.toLowerCase().contains('sprain') ||
+        title.toLowerCase().contains('rice')) {
+      return Icons.accessibility_new;
+    } else if (title.toLowerCase().contains('strain')) {
+      return Icons.healing_rounded;
+    } else if (title.toLowerCase().contains('animal') ||
+        title.toLowerCase().contains('bite')) {
+      return Icons.pets;
+    } else if (title.toLowerCase().contains('chok')) {
+      return Icons.warning;
+    } else if (title.toLowerCase().contains('faint')) {
+      return Icons.sick;
+    } else if (title.toLowerCase().contains('seizure')) {
+      return Icons.medical_information;
+    } else if (title.toLowerCase().contains('equipment')) {
+      return Icons.medical_services;
+    }
+    return Icons.article;
+  }
 }
 
-class _QuizCard extends StatelessWidget {
-  final String title;
+class _ModuleCard extends StatelessWidget {
+  final Map<String, dynamic> module;
   final IconData icon;
-  const _QuizCard({required this.title, required this.icon});
+  final VoidCallback onTap;
+
+  const _ModuleCard({
+    required this.module,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final String title = module['title'] ?? 'Module';
+    final bool isCompleted = module['isCompleted'] == true;
+
     return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Modules coming soon!', style: GoogleFonts.poppins()),
-            backgroundColor: Color(0xFFd84040),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      onTap: onTap,
       child: Container(
         width: 130,
         height: 120,
         decoration: BoxDecoration(
-          color: Colors.green[700],
+          color: isCompleted ? Colors.green[600] : Colors.green[700],
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
             BoxShadow(
@@ -366,20 +624,44 @@ class _QuizCard extends StatelessWidget {
           ],
         ),
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Stack(
           children: [
-            Icon(icon, color: Colors.white, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.white,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
+            // Completion badge
+            if (isCompleted)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: Colors.green[700],
+                    size: 16,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

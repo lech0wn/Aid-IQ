@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:aid_iq/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,12 +12,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final Color primaryColor = const Color(0xFFD84040);
+  final AuthService _authService = AuthService();
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool rememberMe = false;
   bool _imagePrecached = false;
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -95,7 +97,52 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : () async {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+
+                                try {
+                                  final user =
+                                      await _authService.signInWithGoogle();
+                                  if (user != null) {
+                                    if (!mounted) return;
+                                    final navigator = Navigator.of(context);
+                                    navigator.pushReplacementNamed('/main');
+                                  }
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  final messenger = ScaffoldMessenger.of(
+                                    context,
+                                  );
+
+                                  // Extract user-friendly error message
+                                  String errorMessage = e.toString();
+                                  if (errorMessage.startsWith('Exception: ')) {
+                                    errorMessage = errorMessage.substring(11);
+                                  }
+
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        errorMessage,
+                                        style: GoogleFonts.poppins(),
+                                      ),
+                                      backgroundColor: Colors.red,
+                                      duration: const Duration(seconds: 4),
+                                    ),
+                                  );
+                                } finally {
+                                  if (mounted) {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  }
+                                }
+                              },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         side: BorderSide(color: Colors.grey.shade300),
@@ -268,7 +315,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: Colors.grey.shade400,
                         ),
                         onPressed: () {
@@ -291,62 +340,38 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Remember me + Forgot Password
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: rememberMe,
-                            onChanged: (value) {
-                              setState(() {
-                                rememberMe = value!;
-                              });
-                            },
-                            activeColor: primaryColor,
-                            checkColor: Colors.white,
-                          ),
-                          Text(
-                            "Remember Me",
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'This feature is still in development',
-                                  style: GoogleFonts.poppins(),
-                                ),
-                                backgroundColor: Colors.grey[700],
-                                duration: const Duration(seconds: 2),
+                  // Forgot Password
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'This feature is still in development',
+                                style: GoogleFonts.poppins(),
                               ),
-                            );
-                          }
-                        },
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          "Forgot Password?",
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: primaryColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              backgroundColor: Colors.grey[700],
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        "Forgot Password?",
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: primaryColor,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -354,28 +379,62 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          try {
-                            // Navigate to main layout after successful login
-                            if (mounted) {
-                              Navigator.of(
-                                context,
-                              ).pushReplacementNamed('/main');
-                            }
-                          } catch (e) {
-                            // Handle navigation error gracefully
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Navigation error: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        }
-                      },
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : () async {
+                                if (_formKey.currentState?.validate() ??
+                                    false) {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+
+                                  try {
+                                    final user = await _authService
+                                        .signInWithEmail(
+                                          emailController.text.trim(),
+                                          passwordController.text,
+                                        );
+
+                                    if (user != null) {
+                                      if (!mounted) return;
+                                      // Navigate to main layout after successful login
+                                      final navigator = Navigator.of(context);
+                                      navigator.pushReplacementNamed('/main');
+                                    }
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    final messenger = ScaffoldMessenger.of(
+                                      context,
+                                    );
+
+                                    // Extract user-friendly error message
+                                    String errorMessage = e.toString();
+                                    if (errorMessage.startsWith(
+                                      'Exception: ',
+                                    )) {
+                                      errorMessage = errorMessage.substring(11);
+                                    }
+
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          errorMessage,
+                                          style: GoogleFonts.poppins(),
+                                        ),
+                                        backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 4),
+                                      ),
+                                    );
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
+                                  }
+                                }
+                              },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -383,15 +442,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 0,
+                        disabledBackgroundColor: Colors.grey,
                       ),
-                      child: Text(
-                        "Login",
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child:
+                          _isLoading
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                              : Text(
+                                "Login",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
                     ),
                   ),
                   const SizedBox(height: 24),
