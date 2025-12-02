@@ -4,11 +4,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:aid_iq/utils/logger.dart';
 import 'package:flutter/services.dart';
+// image upload features removed — imports reverted
 
 class AuthService {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
   final _google = GoogleSignIn(scopes: ['email']);
+  // final FirebaseStorage _storage = FirebaseStorage.instance;
 
   Future<User?> signUpWithEmail(
     String email,
@@ -484,6 +486,7 @@ class AuthService {
     }
   }
 
+  // uploadProfilePicture removed to revert profile-picture feature
   Future<void> _upsertUser(User? user) async {
     if (user == null) return;
     try {

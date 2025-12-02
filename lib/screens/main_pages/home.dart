@@ -10,6 +10,7 @@ import 'package:aid_iq/services/module_service.dart';
 import 'package:aid_iq/screens/main_pages/module_detail.dart';
 import 'package:aid_iq/utils/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+// image picking removed
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,7 +19,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String userName = "User";
   List<Map<String, dynamic>> recentQuizzes = [];
   List<Map<String, dynamic>> modules = [];
@@ -28,9 +29,13 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // New variables for image picking
+  // image picker variables removed
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserData();
     _loadRecentQuizzes();
     _loadModules();
@@ -43,6 +48,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
@@ -96,6 +102,13 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         userName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
       });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadUserData();
     }
   }
 
@@ -198,6 +211,8 @@ class _HomePageState extends State<HomePage> {
         return Icons.quiz;
     }
   }
+
+  // image pick/upload methods removed
 
   @override
   Widget build(BuildContext context) {

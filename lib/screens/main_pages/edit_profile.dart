@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aid_iq/services/auth_service.dart';
+// image picker removed
 
 class EditProfilePage extends StatefulWidget {
-  const EditProfilePage({super.key});
+  final String? initialDisplayName;
+  final String? initialEmail;
+
+  const EditProfilePage({
+    super.key,
+    this.initialDisplayName,
+    this.initialEmail,
+  });
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -18,6 +26,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isPasswordChanged = false;
+  // image picker state removed
 
   @override
   void initState() {
@@ -28,8 +37,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void _loadUserData() {
     final user = _authService.currentUser;
     if (user != null) {
-      usernameController.text = user.displayName ?? '';
-      emailController.text = user.email ?? '';
+      // Prefer values passed into the page (from Profile) if provided,
+      // otherwise fall back to the auth user's values.
+      usernameController.text = widget.initialDisplayName ?? user.displayName ?? '';
+      emailController.text = widget.initialEmail ?? user.email ?? '';
       passwordController.text = ''; // Don't show password
     }
   }
@@ -41,6 +52,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     passwordController.dispose();
     super.dispose();
   }
+
+  // image pick/upload helpers removed
 
   @override
   Widget build(BuildContext context) {
@@ -156,38 +169,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
+                            readOnly: true,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               color: Colors.black87,
                             ),
                             decoration: InputDecoration(
-                              hintText: 'Enter your email',
-                              hintStyle: GoogleFonts.poppins(
-                                color: Colors.grey[400],
-                              ),
-                              enabledBorder: UnderlineInputBorder(
+                              // Show the email via the controller; no editable hint needed
+                              disabledBorder: UnderlineInputBorder(
                                 borderSide: BorderSide(
                                   color: Colors.grey[300]!,
                                 ),
                               ),
+                              // keep focused border color consistent if field ever becomes enabled
                               focusedBorder: UnderlineInputBorder(
                                 borderSide: const BorderSide(
                                   color: Color(0xFFd84040),
                                 ),
                               ),
+                              suffixIcon: Icon(
+                                Icons.lock,
+                                size: 18,
+                                color: Colors.grey[500],
+                              ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!RegExp(
-                                r'^[^@]+@[^@]+\.[^@]+',
-                              ).hasMatch(value)) {
-                                return 'Enter a valid email address';
-                              }
-                              return null;
-                            },
                           ),
                           const SizedBox(height: 24),
 

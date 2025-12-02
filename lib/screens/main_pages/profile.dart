@@ -14,7 +14,7 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
   final QuizService _quizService = QuizService();
   int _quizzesTaken = 0;
   int _streak = 0;
@@ -23,6 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserStats();
   }
 
@@ -40,6 +41,23 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false;
       });
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh the page to reflect any username changes from edit_profile
+      setState(() {
+        _isLoading = true;
+      });
+      _loadUserStats();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -236,14 +254,29 @@ class _ProfilePageState extends State<ProfilePage> {
                                 context: context,
                                 title: 'Edit Profile',
                                 icon: Icons.edit,
-                                onTap: () {
-                                  Navigator.push(
+                                onTap: () async {
+                                  final authService = AuthService();
+                                  final user = authService.currentUser;
+                                  final displayName = user?.displayName ?? 'User';
+                                  final email = user?.email ?? '';
+
+                                  final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder:
-                                          (context) => const EditProfilePage(),
+                                      builder: (context) => EditProfilePage(
+                                        initialDisplayName: displayName,
+                                        initialEmail: email,
+                                      ),
                                     ),
                                   );
+
+                                  // If edit was successful, refresh the page
+                                  if (result == true) {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    await _loadUserStats();
+                                  }
                                 },
                               ),
                               const SizedBox(height: 12),
