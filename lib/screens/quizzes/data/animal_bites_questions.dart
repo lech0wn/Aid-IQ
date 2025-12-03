@@ -1,91 +1,111 @@
 import 'package:aid_iq/models/question_model.dart';
 
 final List<Question> animalBitesQuestions = [
+  // Concept-Based Questions
   Question(
-    questionText: "What is the first step in treating an animal bite?",
+    questionText: "What is the first step in treating a dog or cat bite?",
     options: [
-      "Ignore it",
+      "Apply antibiotic cream immediately",
+      "Cover the wound with a bandage",
+      "Wash the wound thoroughly with soap and water",
+      "Go to the hospital",
+    ],
+    correctOptionIndex: 2,
+  ),
+  Question(
+    questionText: "Why should you NOT wash the skin after a snake bite?",
+    options: [
+      "Water can spread the venom faster",
+      "Traces of venom left on the skin can help medical personnel identify the type of snake",
+      "Washing makes the bite more painful",
+      "It is not necessary to clean snake bites",
+    ],
+    correctOptionIndex: 1,
+  ),
+  Question(
+    questionText: "When is a tetanus shot needed after an animal bite?",
+    options: [
+      "Always, regardless of vaccination history",
+      "Only for snake bites",
+      "If you have not received one in the last 5 years",
+      "Tetanus shots are never needed for animal bites",
+    ],
+    correctOptionIndex: 2,
+  ),
+  Question(
+    questionText:
+        "What should you do if prescribed antibiotics for an animal bite?",
+    options: [
+      "Stop taking them once you feel better",
+      "Take them at the given time and complete the full course",
+      "Only take them if the wound looks infected",
+      "Share them with others who have similar bites",
+    ],
+    correctOptionIndex: 1,
+  ),
+  Question(
+    questionText: "What is the proper first aid for a snake bite on a limb?",
+    options: [
+      "Wash the area thoroughly and apply ice",
+      "Cut the wound to remove venom",
+      "Use a pressure immobilization bandage and splint the limb, then seek medical help immediately",
+      "Apply a tourniquet above the bite",
+    ],
+    correctOptionIndex: 2,
+  ),
+  // Scenario-Based Questions
+  Question(
+    questionText:
+        "You are bitten by a neighbor's dog on your hand. The skin is broken and bleeding slightly. What should you do first?",
+    options: [
+      "Apply antibiotic cream immediately",
+      "Wash the bitten area thoroughly with soap and water",
+      "Cover it with a bandage without cleaning",
+      "Wait to see if it gets infected",
+    ],
+    correctOptionIndex: 1,
+  ),
+  Question(
+    questionText:
+        "A stray dog bites your friend, and you're concerned about rabies. The doctor recommends a series of rabies shots. Your friend wants to skip some appointments. What should you tell them?",
+    options: [
+      "It's okay to skip a few shots if they feel fine",
+      "They must complete the full cycle of shots as instructed by the doctor",
+      "One shot is enough for protection",
+      "Rabies shots are optional",
+    ],
+    correctOptionIndex: 1,
+  ),
+  Question(
+    questionText:
+        "While hiking, your companion is bitten on the leg by a snake. What is the most appropriate immediate action?",
+    options: [
       "Wash the bite thoroughly with soap and water",
-      "Apply a tourniquet",
-      "Cover it with mud",
-    ],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText: "What should you apply to an animal bite after washing it?",
-    options: ["Nothing", "Antibiotic cream", "Alcohol", "Hydrogen peroxide"],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText:
-        "What should you cover the wound with after applying antibiotic cream?",
-    options: ["Nothing", "A clean bandage", "Tape", "A dirty cloth"],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText: "What should you do if the bite puts you at risk for rabies?",
-    options: [
-      "Ignore it",
-      "Get a series of shots over the next few weeks",
-      "Apply ice",
-      "Apply heat",
-    ],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText: "What should you do if bitten by a snake?",
-    options: [
-      "Wash the skin",
-      "Seek medical help immediately",
-      "Apply a tourniquet",
-      "Try to suck out the venom",
-    ],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText: "Why should you not wash the skin after a snake bite?",
-    options: [
-      "It will make it worse",
-      "The traces of venom left behind might be needed by medical personnel to identify the kind of snake",
-      "It will spread the venom",
-      "It will attract more snakes",
-    ],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText: "What type of bandage should you use for a snake bite?",
-    options: [
-      "A loose bandage",
-      "A pressure immobilization bandage",
-      "A tourniquet",
-      "A dirty cloth",
+      "Seek medical help immediately, do not wash the skin, use a pressure immobilization bandage and splint the limb",
+      "Apply ice to reduce swelling",
+      "Cut the wound to suck out the venom",
     ],
     correctOptionIndex: 1,
   ),
   Question(
     questionText:
-        "What shot may be needed if you have not received one in the last 5 years after an animal bite?",
-    options: ["Flu shot", "Tetanus shot", "Rabies shot", "Allergy shot"],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText: "What should you do if the animal bite is bleeding heavily?",
+        "A person is bitten by a snake on the torso. You need to apply bandaging. What important consideration must you keep in mind?",
     options: [
-      "Apply a tourniquet",
-      "Apply direct pressure to the wound",
-      "Ignore it",
-      "Elevate the limb",
+      "Wrap as tightly as possible",
+      "Do not bandage torso bites at all",
+      "Make sure the bandaging does not restrict their breathing",
+      "Only bandage if the person is unconscious",
     ],
-    correctOptionIndex: 1,
+    correctOptionIndex: 2,
   ),
   Question(
     questionText:
-        "What should you do if you experience signs of infection after an animal bite?",
+        "You were bitten by a cat three days ago. The doctor prescribes antibiotics and you start feeling better after two days of taking them. What should you do?",
     options: [
-      "Ignore it",
-      "See a doctor immediately",
-      "Apply more antibiotic cream",
-      "Apply heat",
+      "Stop taking the antibiotics since you feel better",
+      "Continue taking them at the given time until you complete the full course",
+      "Save the remaining antibiotics for future use",
+      "Take them only when the wound hurts",
     ],
     correctOptionIndex: 1,
   ),

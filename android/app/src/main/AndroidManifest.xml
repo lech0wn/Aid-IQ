@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="aid_iq_demo"
+        android:label="Aid IQ"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

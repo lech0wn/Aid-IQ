@@ -47,6 +47,29 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
     final questions = widget.questions;
     final userAnswers = widget.userAnswers;
 
+    // Responsive design helpers
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final isTablet = screenWidth > 600;
+    final isSmallScreen = screenWidth < 360;
+
+    // Responsive font sizes
+    final scoreTitleFontSize = isTablet ? 24.0 : (isSmallScreen ? 18.0 : 20.0);
+    final scoreFontSize = isTablet ? 48.0 : (isSmallScreen ? 32.0 : 40.0);
+    final questionFontSize = isTablet ? 17.0 : (isSmallScreen ? 13.0 : 15.0);
+    final optionFontSize = isTablet ? 15.0 : (isSmallScreen ? 11.0 : 13.0);
+    final labelFontSize = isTablet ? 14.0 : (isSmallScreen ? 10.0 : 12.0);
+
+    // Responsive padding
+    final screenPadding =
+        isTablet
+            ? EdgeInsets.all(24)
+            : (isSmallScreen ? EdgeInsets.all(12) : EdgeInsets.all(16));
+    final cardPadding =
+        isTablet
+            ? EdgeInsets.all(20)
+            : (isSmallScreen ? EdgeInsets.all(12) : EdgeInsets.all(16));
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -63,7 +86,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
       ),
       body: SingleChildScrollView(
         controller: _scrollController,
-        padding: const EdgeInsets.all(16),
+        padding: screenPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -74,7 +97,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                   Text(
                     "Your Score",
                     style: GoogleFonts.poppins(
-                      fontSize: 20,
+                      fontSize: scoreTitleFontSize,
                       color: Colors.black87,
                     ),
                   ),
@@ -82,7 +105,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                   Text(
                     "$actualScore / ${questions.length}",
                     style: GoogleFonts.poppins(
-                      fontSize: 40,
+                      fontSize: scoreFontSize,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFFd84040),
                     ),
@@ -117,9 +140,11 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                       width: 2,
                     ),
                   ),
-                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  margin: EdgeInsets.symmetric(
+                    vertical: isTablet ? 12.0 : (isSmallScreen ? 6.0 : 8.0),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: cardPadding,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -148,7 +173,10 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                                     style: GoogleFonts.poppins(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 12,
+                                      fontSize:
+                                          isTablet
+                                              ? 14.0
+                                              : (isSmallScreen ? 10.0 : 12.0),
                                     ),
                                   ),
                                 ],
@@ -164,10 +192,12 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                               question['question'] ??
                               '',
                           style: GoogleFonts.poppins(
-                            fontSize: 15,
+                            fontSize: questionFontSize,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
                           ),
+                          softWrap: true,
+                          overflow: TextOverflow.visible,
                         ),
                         const SizedBox(height: 12),
 
@@ -175,7 +205,8 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                         Text(
                           'Choices:',
                           style: GoogleFonts.poppins(
-                            fontSize: 13,
+                            fontSize:
+                                isTablet ? 15.0 : (isSmallScreen ? 11.0 : 13.0),
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
                           ),
@@ -217,7 +248,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                                 Text(
                                   '- ',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 13,
+                                    fontSize: optionFontSize,
                                     color: textColor,
                                     fontWeight: fontWeight,
                                   ),
@@ -226,10 +257,12 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                                   child: Text(
                                     options[optionIndex],
                                     style: GoogleFonts.poppins(
-                                      fontSize: 13,
+                                      fontSize: optionFontSize,
                                       color: textColor,
                                       fontWeight: fontWeight,
                                     ),
+                                    softWrap: true,
+                                    overflow: TextOverflow.visible,
                                   ),
                                 ),
                               ],
@@ -254,7 +287,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                                   Text(
                                     'Response: ',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 12,
+                                      fontSize: labelFontSize,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black87,
                                     ),
@@ -265,9 +298,11 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                                           ? options[userAnswerIndex]
                                           : 'No answer',
                                       style: GoogleFonts.poppins(
-                                        fontSize: 12,
+                                        fontSize: labelFontSize,
                                         color: Colors.black87,
                                       ),
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
                                     ),
                                   ),
                                 ],
@@ -279,7 +314,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                                   Text(
                                     'Correct answer: ',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 12,
+                                      fontSize: labelFontSize,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black87,
                                     ),
@@ -288,9 +323,11 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                                     child: Text(
                                       options[correctOptionIndex],
                                       style: GoogleFonts.poppins(
-                                        fontSize: 12,
+                                        fontSize: labelFontSize,
                                         color: Colors.black87,
                                       ),
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
                                     ),
                                   ),
                                 ],
@@ -306,7 +343,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                             Text(
                               'Score: ',
                               style: GoogleFonts.poppins(
-                                fontSize: 12,
+                                fontSize: labelFontSize,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black87,
                               ),
@@ -314,7 +351,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                             Text(
                               isCorrect ? '1 out of 1 ✓' : '0 out of 1',
                               style: GoogleFonts.poppins(
-                                fontSize: 12,
+                                fontSize: labelFontSize,
                                 color: isCorrect ? Colors.green : Colors.red,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -328,6 +365,30 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
               },
             ),
 
+            //score again
+            Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    "Your Score: ",
+                    style: GoogleFonts.poppins(
+                      fontSize: scoreTitleFontSize,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    "$actualScore / ${questions.length}",
+                    style: GoogleFonts.poppins(
+                      fontSize: isTablet ? 24.0 : (isSmallScreen ? 18.0 : 20.0),
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFd84040),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
 
             // ACTION BUTTONS
@@ -356,7 +417,7 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
                       );
                     },
                     child: Text(
-                      "See Results",
+                      "Back to Top",
                       style: GoogleFonts.poppins(
                         color: Colors.black87,
                         fontWeight: FontWeight.w600,

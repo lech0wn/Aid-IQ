@@ -1,111 +1,110 @@
 import 'package:aid_iq/models/question_model.dart';
 
 final List<Question> firstAidIntroductionQuestions = [
+  // Concept-Based Questions
   Question(
     questionText:
-        "What are the three main aims of first aid, often called the 'Three P's'?",
+        "What are the three main aims of first aid (the \"Three P's\")?",
     options: [
-      "Protect, Provide, Perform",
+      "Protect, Provide, Preserve",
+      "Prevent, Promote, Perform",
       "Preserve, Prevent, Promote",
-      "Prepare, Practice, Perfect",
-      "Plan, Proceed, Persist",
+      "Prioritize, Protect, Provide",
+    ],
+    correctOptionIndex: 2,
+  ),
+  Question(
+    questionText:
+        "Why is knowledge of first aid important for individuals, even when professional medical help is available?",
+    options: [
+      "It allows individuals to replace professional medical assistance.",
+      "It helps ensure the right methods of administering medical assistance are provided until professionals arrive.",
+      "It guarantees a full recovery for the casualty.",
+      "It is only useful in situations where no professional help is available.",
     ],
     correctOptionIndex: 1,
   ),
   Question(
     questionText:
-        "Why is it important to provide first aid before professional help arrives?",
+        "Which of the following is NOT a hindrance to giving effective first aid?",
     options: [
-      "To replace the need for medical professionals",
-      "To stabilize the victim and prevent further harm",
-      "To diagnose the medical condition",
-      "To administer advanced medical treatments",
-    ],
-    correctOptionIndex: 1,
-  ),
-  Question(
-    questionText: "Give one example of how first aid can promote recovery.",
-    options: [
-      "Properly diagnosing the injury",
-      "Administering prescription medication",
-      "Properly cooling a burn to reduce scarring",
-      "Performing surgery on the spot",
-    ],
-    correctOptionIndex: 2,
-  ),
-  Question(
-    questionText:
-        "What is a common hindrance to providing first aid in crowded places?",
-    options: [
-      "Availability of medical supplies",
-      "Lack of space to work",
-      "Interference and incorrect advice from crowds",
-      "Access to emergency services",
-    ],
-    correctOptionIndex: 2,
-  ),
-  Question(
-    questionText:
-        "How can unfavorable surroundings affect the delivery of first aid?",
-    options: [
-      "By providing better lighting",
-      "By ensuring privacy for the victim",
-      "By creating additional hazards and difficulties",
-      "By attracting more bystanders to help",
-    ],
-    correctOptionIndex: 2,
-  ),
-  Question(
-    questionText:
-        "Why should a first aider never endanger themselves while helping others?",
-    options: [
-      "Because they are not trained to handle dangerous situations",
-      "Because their life is more valuable than the victim's",
-      "Because it could lead to more casualties",
-      "Because it is against the law",
-    ],
-    correctOptionIndex: 2,
-  ),
-  Question(
-    questionText: "What is the primary aim of first aid?",
-    options: [
-      "To diagnose the illness",
-      "To preserve life",
-      "To administer medication",
-      "To transport the victim",
+      "Crowded city streets",
+      "The presence of a calm and cooperative victim",
+      "Lack of necessary materials",
+      "Pressure from victims or relatives",
     ],
     correctOptionIndex: 1,
   ),
   Question(
     questionText:
-        "How can pressure from victims or relatives hinder first aid?",
+        "Which of the following is a primary role and responsibility of a first aider?",
     options: [
-      "By providing useful information",
-      "By helping to calm the victim",
-      "By causing the first aider to act improperly",
-      "By speeding up the process",
-    ],
-    correctOptionIndex: 2,
-  ),
-  Question(
-    questionText:
-        "What should a first aider do if they lack necessary materials?",
-    options: [
-      "Give up and wait for professional help",
-      "Improvise using available resources",
-      "Leave to find the needed materials",
-      "Ask bystanders for assistance",
+      "Diagnosing the patient's long-term medical condition.",
+      "Ensuring personal safety and that of the patient/bystander.",
+      "Replacing the need for a physician.",
+      "Administering advanced medical procedures.",
     ],
     correctOptionIndex: 1,
   ),
   Question(
     questionText:
-        "Why is it important to remove dangers from the area before giving first aid?",
+        "Which characteristic of a good first aider involves making the best use of available resources?",
+    options: ["Gentle", "Observant", "Resourceful", "Tactful"],
+    correctOptionIndex: 2,
+  ),
+  // Scenario-Based Questions
+  Question(
+    questionText:
+        "You come across a person lying on the sidewalk after a bicycle accident. A crowd starts to gather around, shouting different instructions. As a first aider, what should you do first?",
     options: [
-      "To make the area look cleaner",
-      "To prevent further injury to the victim and first aider",
-      "To attract attention from passersby",
-      "To create more space to work",
+      "Immediately start performing CPR, regardless of the victim's condition.",
+      "Shout at the crowd to disperse and leave the area.",
+      "Assess the safety of the scene for yourself, the victim, and bystanders, and then gain access to the victim.",
+      "Ask the crowd for their opinions on what to do next.",
+    ],
+    correctOptionIndex: 2,
+  ),
+  Question(
+    questionText:
+        "You are in a shopping mall when someone collapses and is unresponsive. The area is noisy and crowded. What is your immediate priority to preserve life?",
+    options: [
+      "Attempt to move the person to a quieter area by yourself.",
+      "Check for responsiveness and breathing, and if necessary, perform emergency procedures like opening an airway.",
+      "Ask bystanders if anyone knows the person who collapsed.",
+      "Wait for security personnel to arrive before doing anything.",
+    ],
+    correctOptionIndex: 1,
+  ),
+  Question(
+    questionText:
+        "It is nighttime and raining heavily. You witness a car accident on a busy highway, and one victim appears to have a broken leg. What is the most appropriate action to prevent further deterioration of the victim's condition?",
+    options: [
+      "Attempt to move the victim to your car to get them out of the rain.",
+      "Immobilize the injured leg to prevent further movement and injury, ensuring the safety of the area if possible.",
+      "Leave the victim and call for help from a safe distance.",
+      "Try to set the broken bone yourself.",
+    ],
+    correctOptionIndex: 1,
+  ),
+  Question(
+    questionText:
+        "A child in your home accidentally touches a hot pan and gets a burn on the hand. What first aid measure should you take to promote recovery?",
+    options: [
+      "Apply ice directly to the burn.",
+      "Cover the burn with a thick blanket.",
+      "Properly cool the burn with cool running water to reduce the risk of scarring and encourage early healing.",
+      "Apply butter or oil to the burn.",
+    ],
+    correctOptionIndex: 2,
+  ),
+  Question(
+    questionText:
+        "You are giving first aid to a drunk, injured person whose relatives are crying and insisting that you move him quickly to a vehicle. As a good first aider, how should you respond?",
+    options: [
+      "Comply with the relatives' demands to avoid further distress.",
+      "Explain calmly that a thorough examination is necessary before moving the victim, and prioritize the victim's well-being over the relatives' pressure.",
+      "Ignore the relatives and continue with your assessment without explanation.",
+      "Tell the relatives that you are not a doctor and cannot help.",
     ],
     correctOptionIndex: 1,
   ),
