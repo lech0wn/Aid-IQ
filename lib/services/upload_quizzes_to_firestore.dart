@@ -5,15 +5,12 @@ import 'package:aid_iq/services/quiz_service.dart';
 import 'package:aid_iq/utils/logger.dart';
 import 'package:aid_iq/screens/quizzes/data/cpr_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/first_aid_intro_questions.dart';
-import 'package:aid_iq/screens/quizzes/data/proper_bandaging_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/wound_cleaning_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/rice_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/strains_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/animal_bites_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/choking_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/fainting_questions.dart';
-import 'package:aid_iq/screens/quizzes/data/seizure_questions.dart';
-import 'package:aid_iq/screens/quizzes/data/first_aid_equipment_questions.dart';
 
 class UploadQuizzesToFirestore {
   static Future<void> uploadAllQuizzes() async {
@@ -30,11 +27,6 @@ class UploadQuizzesToFirestore {
         'title': 'CPR',
         'questions': cprQuestions.map((q) => q.toMap()).toList(),
         'description': 'Cardiopulmonary Resuscitation techniques',
-      },
-      {
-        'title': 'Proper Bandaging',
-        'questions': properBandagingQuestions.map((q) => q.toMap()).toList(),
-        'description': 'Learn how to properly bandage wounds',
       },
       {
         'title': 'Wound Cleaning',
@@ -65,16 +57,6 @@ class UploadQuizzesToFirestore {
         'title': 'Fainting',
         'questions': faintingQuestions.map((q) => q.toMap()).toList(),
         'description': 'First aid for fainting episodes',
-      },
-      {
-        'title': 'Seizure',
-        'questions': seizureQuestions.map((q) => q.toMap()).toList(),
-        'description': 'First aid for seizures',
-      },
-      {
-        'title': 'First Aid Equipments',
-        'questions': firstAidEquipmentQuestions.map((q) => q.toMap()).toList(),
-        'description': 'Essential first aid equipment and their uses',
       },
     ];
 

@@ -8,15 +8,12 @@ import 'package:aid_iq/services/quiz_service.dart';
 import 'package:aid_iq/services/auth_service.dart';
 import 'package:aid_iq/screens/quizzes/data/cpr_questions.dart'; // Import CPR questions
 import 'package:aid_iq/screens/quizzes/data/first_aid_intro_questions.dart';
-import 'package:aid_iq/screens/quizzes/data/proper_bandaging_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/wound_cleaning_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/rice_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/strains_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/animal_bites_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/choking_questions.dart';
 import 'package:aid_iq/screens/quizzes/data/fainting_questions.dart';
-import 'package:aid_iq/screens/quizzes/data/seizure_questions.dart';
-import 'package:aid_iq/screens/quizzes/data/first_aid_equipment_questions.dart';
 import 'package:aid_iq/utils/logger.dart';
 
 class QuizzesPage extends StatefulWidget {
@@ -46,8 +43,6 @@ class _QuizzesPageState extends State<QuizzesPage> {
         return 'Learn the basics of first aid and emergency response.';
       case 'CPR':
         return 'Cardiopulmonary Resuscitation techniques and procedures.';
-      case 'Proper Bandaging':
-        return 'Learn how to properly bandage wounds and injuries.';
       case 'Wound Cleaning':
         return 'Proper wound cleaning and disinfection procedures.';
       case 'R.I.C.E. (Treating Sprains)':
@@ -60,10 +55,6 @@ class _QuizzesPageState extends State<QuizzesPage> {
         return 'Heimlich maneuver and choking emergency response.';
       case 'Fainting':
         return 'First aid steps for fainting and loss of consciousness.';
-      case 'Seizure':
-        return 'Proper first aid response for seizure episodes.';
-      case 'First Aid Equipments':
-        return 'Essential first aid equipment and their uses.';
       default:
         return 'Test your knowledge with this first aid quiz.';
     }
@@ -103,9 +94,6 @@ class _QuizzesPageState extends State<QuizzesPage> {
         questions =
             firstAidIntroductionQuestions.map((q) => q.toMap()).toList();
         break;
-      case 'Proper Bandaging':
-        questions = properBandagingQuestions.map((q) => q.toMap()).toList();
-        break;
       case 'Wound Cleaning':
         questions = woundCleaningQuestions.map((q) => q.toMap()).toList();
         break;
@@ -123,12 +111,6 @@ class _QuizzesPageState extends State<QuizzesPage> {
         break;
       case 'Fainting':
         questions = faintingQuestions.map((q) => q.toMap()).toList();
-        break;
-      case 'Seizure':
-        questions = seizureQuestions.map((q) => q.toMap()).toList();
-        break;
-      case 'First Aid Equipments':
-        questions = firstAidEquipmentQuestions.map((q) => q.toMap()).toList();
         break;
       default:
         questions = [];
@@ -190,15 +172,12 @@ class _QuizzesPageState extends State<QuizzesPage> {
       final List<Map<String, dynamic>> hardcodedQuizzes = [
         {"title": "First Aid Introduction", "questions": 10},
         {"title": "CPR", "questions": 10},
-        {"title": "Proper Bandaging", "questions": 10},
         {"title": "Wound Cleaning", "questions": 10},
         {"title": "R.I.C.E. (Treating Sprains)", "questions": 10},
         {"title": "Strains", "questions": 10},
         {"title": "Animal Bites", "questions": 10},
         {"title": "Choking", "questions": 10},
         {"title": "Fainting", "questions": 10},
-        {"title": "Seizure", "questions": 10},
-        {"title": "First Aid Equipments", "questions": 10},
       ];
 
       // Use Firestore quizzes if available, otherwise use hardcoded list
@@ -369,7 +348,6 @@ class _QuizzesPageState extends State<QuizzesPage> {
                     ],
                   ),
                 ),
-                const CircleAvatar(radius: 20, backgroundColor: Colors.black),
               ],
             ),
           ),
