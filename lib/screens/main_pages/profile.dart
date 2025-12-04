@@ -4,6 +4,7 @@ import 'package:aid_iq/screens/legal_pages/terms_and_conditions.dart';
 import 'package:aid_iq/screens/main_pages/edit_profile.dart';
 import 'package:aid_iq/services/auth_service.dart';
 import 'package:aid_iq/services/quiz_service.dart';
+import 'package:aid_iq/services/local_module_service.dart';
 import 'package:aid_iq/utils/logger.dart';
 import 'package:intl/intl.dart';
 
@@ -15,9 +16,10 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final QuizService _quizService = QuizService();
-  int _quizzesTaken = 0;
+  final LocalModuleService _moduleService = LocalModuleService();
   int _streak = 0;
+  int _modulesCompleted = 0;
+  int _perfectScores = 0;
   bool _isLoading = true;
 
   @override
@@ -28,10 +30,38 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserStats() async {
     try {
-      final progress = await _quizService.getUserQuizProgress();
+      // Load quiz stats for streak and perfect scores
+      final QuizService quizService = QuizService();
+      final quizProgress = await quizService.getUserQuizProgress();
+
+      // Calculate perfect scores (quizzes with 100%)
+      int perfectScores = 0;
+      final quizProgressData =
+          quizProgress['quizProgress'] as Map<String, dynamic>? ?? {};
+      for (final entry in quizProgressData.entries) {
+        final progress = entry.value;
+        if (progress is Map) {
+          final percentage = progress['percentage'] as int?;
+          final score = progress['score'] as int?;
+          final totalQuestions = progress['totalQuestions'] as int?;
+
+          // Check if it's a perfect score (100% or score == totalQuestions)
+          if (percentage == 100 ||
+              (score != null &&
+                  totalQuestions != null &&
+                  score == totalQuestions)) {
+            perfectScores++;
+          }
+        }
+      }
+
+      // Load module stats
+      final moduleProgress = await _moduleService.getUserModuleProgress();
+
       setState(() {
-        _quizzesTaken = progress['quizzesTaken'] ?? 0;
-        _streak = progress['streak'] ?? 0;
+        _streak = quizProgress['streak'] ?? 0;
+        _modulesCompleted = moduleProgress['modulesCompleted'] ?? 0;
+        _perfectScores = perfectScores;
         _isLoading = false;
       });
     } catch (e) {
@@ -48,19 +78,42 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Red Header Section
+          // Header section
           Container(
             color: const Color(0xFFd84040),
-            padding: const EdgeInsets.only(top: 48, bottom: 60),
-            child: Center(
-              child: Text(
-                'Profile',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+            padding: const EdgeInsets.only(
+              top: 48,
+              left: 24,
+              right: 24,
+              bottom: 24,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hello,',
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFFd84040),
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "Your Profile",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
 
@@ -80,22 +133,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
-                        // Profile Picture (overlapping)
-                        Transform.translate(
-                          offset: const Offset(0, -60),
-                          child: Center(
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor: const Color(0xFFE0E0E0),
-                              child: const Icon(
-                                Icons.person_add,
-                                size: 50,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
 
                         // User Information
                         Padding(
@@ -114,18 +151,37 @@ class _ProfilePageState extends State<ProfilePage> {
 
                               return Column(
                                 children: [
-                                  Text(
-                                    displayName,
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
+                                  // Username
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
+                                      Icon(
+                                        Icons.person,
+                                        size: 20,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        displayName,
+                                        style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Email
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.email,
+                                        size: 18,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 8),
                                       Flexible(
                                         child: Text(
                                           email,
@@ -136,24 +192,33 @@ class _ProfilePageState extends State<ProfilePage> {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                      if (joinedText.isNotEmpty) ...[
-                                        Text(
-                                          ' • ',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            color: Colors.grey[600],
-                                          ),
+                                    ],
+                                  ),
+                                  if (joinedText.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    // Join Date
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today,
+                                          size: 18,
+                                          color: Colors.grey[600],
                                         ),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          joinedText,
+                                          DateFormat(
+                                            'MMM yyyy',
+                                          ).format(creationDate!),
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             color: Colors.grey[600],
                                           ),
                                         ),
                                       ],
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ],
                               );
                             },
@@ -180,30 +245,50 @@ class _ProfilePageState extends State<ProfilePage> {
                                             ),
                                       ),
                                     )
-                                    : Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
+                                    : Column(
                                       children: [
-                                        Expanded(
-                                          child: _buildStatItem(
-                                            'QUIZZES',
-                                            '$_quizzesTaken',
-                                            Icons.menu_book,
-                                            Colors.lightBlue,
-                                          ),
+                                        // First row: Streak and Modules
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            Expanded(
+                                              child: _buildStatItem(
+                                                'STREAK',
+                                                '$_streak',
+                                                Icons.local_fire_department,
+                                                Colors.orange,
+                                              ),
+                                            ),
+                                            Container(
+                                              height: 50,
+                                              width: 1,
+                                              color: Colors.white,
+                                            ),
+                                            Expanded(
+                                              child: _buildStatItem(
+                                                'MODULES',
+                                                '$_modulesCompleted',
+                                                Icons.article,
+                                                Colors.green,
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                        // Divider
                                         Container(
-                                          height: 50,
-                                          width: 1,
-                                          color: Colors.white,
-                                        ),
-                                        Expanded(
-                                          child: _buildStatItem(
-                                            'STREAK',
-                                            '$_streak',
-                                            Icons.local_fire_department,
-                                            Colors.orange,
+                                          margin: const EdgeInsets.symmetric(
+                                            vertical: 12,
                                           ),
+                                          height: 1,
+                                          color: Colors.white.withOpacity(0.3),
+                                        ),
+                                        // Second row: Perfect Scores (centered)
+                                        _buildStatItem(
+                                          'PERFECT SCORES',
+                                          '$_perfectScores',
+                                          Icons.star,
+                                          Colors.amber,
                                         ),
                                       ],
                                     ),
