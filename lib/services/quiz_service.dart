@@ -79,6 +79,7 @@ class QuizService {
         'quizzesTaken': data['quizzesTaken'] ?? 0,
         'streak': data['streak'] ?? 0,
         'lastQuizDate': data['lastQuizDate'],
+        'lastActivityDate': data['lastActivityDate'],
         'quizProgress': quizProgress,
       };
     } catch (e) {
@@ -118,6 +119,7 @@ class QuizService {
 
       int quizzesTaken = currentData['quizzesTaken'] ?? 0;
       int streak = currentData['streak'] ?? 0;
+      Timestamp? lastActivityDate = currentData['lastActivityDate'];
       Timestamp? lastQuizDate = currentData['lastQuizDate'];
 
       // Check if this is a new quiz completion (not a retake) BEFORE updating
@@ -147,27 +149,30 @@ class QuizService {
         quizzesTaken++;
       }
 
-      // Update streak
-      if (lastQuizDate != null) {
-        final lastDate = lastQuizDate.toDate();
-        final lastQuizDay = DateTime(
+      // Update streak based on last activity date (works for both quiz and app usage)
+      // Use lastActivityDate if available, otherwise use lastQuizDate for backward compatibility
+      Timestamp? referenceDate = lastActivityDate ?? lastQuizDate;
+      
+      if (referenceDate != null) {
+        final lastDate = referenceDate.toDate();
+        final lastActivityDay = DateTime(
           lastDate.year,
           lastDate.month,
           lastDate.day,
         );
-        final daysDifference = today.difference(lastQuizDay).inDays;
+        final daysDifference = today.difference(lastActivityDay).inDays;
 
         if (daysDifference == 0) {
-          // Same day - don't change streak
+          // Same day - don't change streak (already counted today)
         } else if (daysDifference == 1) {
           // Consecutive day - increment streak
           streak++;
         } else {
-          // Streak broken - reset to 1
-          streak = 1;
+          // Streak broken - reset to 0
+          streak = 0;
         }
       } else {
-        // First quiz ever - start streak at 1
+        // First activity ever - start streak at 1
         streak = 1;
       }
 
@@ -180,6 +185,7 @@ class QuizService {
           'quizzesTaken': quizzesTaken,
           'streak': streak,
           'lastQuizDate': FieldValue.serverTimestamp(),
+          'lastActivityDate': FieldValue.serverTimestamp(), // Track last activity for streak
           'quizProgress': quizProgress,
         });
       } else {
@@ -188,6 +194,7 @@ class QuizService {
           'quizzesTaken': quizzesTaken,
           'streak': streak,
           'lastQuizDate': FieldValue.serverTimestamp(),
+          'lastActivityDate': FieldValue.serverTimestamp(), // Track last activity for streak
           'quizProgress': quizProgress, // Write the entire map with all quizzes
         });
       }

@@ -6,7 +6,7 @@ import 'package:aid_iq/screens/main_pages/learn_more.dart';
 import 'package:aid_iq/widgets/main_layout.dart';
 import 'package:aid_iq/services/auth_service.dart';
 import 'package:aid_iq/services/quiz_service.dart';
-import 'package:aid_iq/services/module_service.dart';
+import 'package:aid_iq/services/local_module_service.dart';
 import 'package:aid_iq/screens/main_pages/module_detail.dart';
 import 'package:aid_iq/utils/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<Map<String, dynamic>> modules = [];
   final AuthService _authService = AuthService();
   final QuizService _quizService = QuizService();
-  final ModuleService _moduleService = ModuleService();
+  final LocalModuleService _moduleService = LocalModuleService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -257,7 +257,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       ],
                     ),
                   ),
-                  const CircleAvatar(radius: 20, backgroundColor: Colors.black),
                 ],
               ),
             ),
@@ -597,10 +596,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return Icons.warning;
     } else if (title.toLowerCase().contains('faint')) {
       return Icons.sick;
-    } else if (title.toLowerCase().contains('seizure')) {
-      return Icons.medical_information;
-    } else if (title.toLowerCase().contains('equipment')) {
-      return Icons.medical_services;
     }
     return Icons.article;
   }
@@ -641,23 +636,29 @@ class _ModuleCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Stack(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white, size: 32),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.white,
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(icon, color: Colors.white, size: 32),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
             // Completion badge
             if (isCompleted)

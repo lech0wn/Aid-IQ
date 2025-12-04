@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aid_iq/screens/main_pages/home.dart';
 import 'package:aid_iq/screens/main_pages/quizzes.dart';
 import 'package:aid_iq/screens/main_pages/profile.dart';
+import 'package:aid_iq/services/app_usage_service.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -10,10 +11,11 @@ class MainLayout extends StatefulWidget {
   State<MainLayout> createState() => MainLayoutState();
 }
 
-class MainLayoutState extends State<MainLayout> {
+class MainLayoutState extends State<MainLayout> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   int _homeRefreshKey = 0;
   int _quizzesRefreshKey = 0;
+  final AppUsageService _appUsageService = AppUsageService();
 
   // List of pages for navigation - using keys to force refresh
   List<Widget> get _pages => [
@@ -44,6 +46,35 @@ class MainLayoutState extends State<MainLayout> {
   // Public method to switch tabs from child widgets
   void switchToTab(int index) {
     _onItemTapped(index);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _appUsageService.startSession();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appUsageService.stopSession();
+    _appUsageService.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // App came to foreground - start tracking
+      _appUsageService.startSession();
+    } else if (state == AppLifecycleState.paused || 
+               state == AppLifecycleState.inactive ||
+               state == AppLifecycleState.detached) {
+      // App went to background - stop tracking
+      _appUsageService.stopSession();
+    }
   }
 
   @override

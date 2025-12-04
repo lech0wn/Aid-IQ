@@ -8,34 +8,34 @@ class LearnMorePage extends StatelessWidget {
     {
       'question': 'What is Aid IQ and what does it do?',
       'answer':
-          'Aid IQ is a mobile application designed to provide quick and reliable first aid information and quizzes to help users learn and test their knowledge in emergency situations.',
+          'Aid IQ is a mobile application aimed to entertain our users through gamifying the process of learning first aid techniques. ',
     },
     {
       'question': 'Who is this app for?',
       'answer':
-          'This app is for anyone interested in learning basic first aid, from individuals wanting to be prepared for emergencies to students and professionals seeking to refresh their knowledge.',
+          'Aid IQ is intended for students, more specifically, students who are a part of the red cross organization or are training to be a member. ',
     },
     {
       'question':
           'Is the information in the app up-to-date and accurate? Where does the information in the app come from?',
       'answer':
-          'The information in Aid IQ is sourced from reputable medical and first aid organizations. We strive to keep it as up-to-date as possible, but it should not replace professional medical advice.',
+          'The information in Aid IQ is sourced from reputable medical and first aid organizations. Organizations that are credited to give people certificates that identify individuals to be capable of first aid techniques.',
     },
     {
       'question': 'Is the app free to use? Are there any in-app purchases?',
       'answer':
-          'Yes, Aid IQ is completely free to download and use. There are no hidden costs or in-app purchases.',
+          'Aid IQ is a completely free app with no hidden costs or content behind any paywalls.',
     },
     {
       'question': 'Can I use this app offline?',
       'answer':
-          'Yes, once downloaded, most of the app\'s content, including first aid guides and quizzes, can be accessed offline without an internet connection.',
+          'Aid IQ is almost completely accessible online, except for the initial sign up, the modules and quizzes are accessible offline without restrictions.',
     },
-    // Add more FAQ items here as needed:
-    // {
-    //   'question': 'Your question here?',
-    //   'answer': 'Your answer here.',
-    // },
+    {
+      'question': 'Who can I contact if I have any questions or feedback?',
+      'answer':
+          'You can contact us at aidiq@gmail.com. We will be happy to help you with any questions or feedback you have.',
+    },
   ];
   // ============================================================
   // END OF ACCORDION DATA STORAGE
@@ -91,12 +91,11 @@ class LearnMorePage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Logo (White version)
+                  // Logo
                   Image.asset(
-                    'assets/images/AIDIQ_logo_red.png',
+                    'assets/images/AIDIQ_logo_white.png',
                     height: 80,
                     width: 80,
-                    color: Colors.white, // Makes logo white
                   ),
                   const SizedBox(height: 10),
                   Text(

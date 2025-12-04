@@ -1,3 +1,8 @@
+// DEPRECATED: This service is no longer used. Modules are now loaded from local files.
+// Progress is stored in SharedPreferences via LocalModuleService.
+// Keeping this file commented out for reference only.
+
+/*
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:aid_iq/utils/logger.dart';
@@ -18,7 +23,10 @@ class ModuleService {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = json.encode(modules);
       await prefs.setString(_modulesCacheKey, jsonString);
-      await prefs.setInt(_modulesCacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+        _modulesCacheTimestampKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
       appLogger.d('Cached ${modules.length} modules locally');
     } catch (e) {
       appLogger.e('Error caching modules', error: e);
@@ -45,34 +53,42 @@ class ModuleService {
     // Try to load from Firestore first
     try {
       final snapshot = await _db.collection('modules').orderBy('order').get();
-      final modules = snapshot.docs.map((doc) {
-        final data = doc.data();
-        // Convert Firestore Timestamps to ISO strings for JSON serialization
-        final module = {'id': doc.id, ...data};
-        // Handle Timestamp fields
-        if (module['createdAt'] is Timestamp) {
-          module['createdAt'] = (module['createdAt'] as Timestamp).toDate().toIso8601String();
-        }
-        if (module['updatedAt'] is Timestamp) {
-          module['updatedAt'] = (module['updatedAt'] as Timestamp).toDate().toIso8601String();
-        }
-        return module;
-      }).toList();
+      final modules =
+          snapshot.docs.map((doc) {
+            final data = doc.data();
+            // Convert Firestore Timestamps to ISO strings for JSON serialization
+            final module = {'id': doc.id, ...data};
+            // Handle Timestamp fields
+            if (module['createdAt'] is Timestamp) {
+              module['createdAt'] =
+                  (module['createdAt'] as Timestamp).toDate().toIso8601String();
+            }
+            if (module['updatedAt'] is Timestamp) {
+              module['updatedAt'] =
+                  (module['updatedAt'] as Timestamp).toDate().toIso8601String();
+            }
+            return module;
+          }).toList();
 
       // Cache the modules for offline use
       await _cacheModules(modules);
       appLogger.d('Loaded ${modules.length} modules from Firestore and cached');
       return modules;
     } catch (e) {
-      appLogger.w('Error loading modules from Firestore, trying cache', error: e);
-      
+      appLogger.w(
+        'Error loading modules from Firestore, trying cache',
+        error: e,
+      );
+
       // Fallback to cached modules if Firestore fails
       final cachedModules = await _loadCachedModules();
       if (cachedModules.isNotEmpty) {
-        appLogger.i('Loaded ${cachedModules.length} modules from cache (offline mode)');
+        appLogger.i(
+          'Loaded ${cachedModules.length} modules from cache (offline mode)',
+        );
         return cachedModules;
       }
-      
+
       appLogger.e('No cached modules available', error: e);
       return [];
     }
@@ -101,10 +117,12 @@ class ModuleService {
       final module = {'id': doc.id, ...data};
       // Handle Timestamp fields
       if (module['createdAt'] is Timestamp) {
-        module['createdAt'] = (module['createdAt'] as Timestamp).toDate().toIso8601String();
+        module['createdAt'] =
+            (module['createdAt'] as Timestamp).toDate().toIso8601String();
       }
       if (module['updatedAt'] is Timestamp) {
-        module['updatedAt'] = (module['updatedAt'] as Timestamp).toDate().toIso8601String();
+        module['updatedAt'] =
+            (module['updatedAt'] as Timestamp).toDate().toIso8601String();
       }
 
       // Update cache with this module
@@ -119,8 +137,11 @@ class ModuleService {
 
       return module;
     } catch (e) {
-      appLogger.w('Error loading module from Firestore, trying cache', error: e);
-      
+      appLogger.w(
+        'Error loading module from Firestore, trying cache',
+        error: e,
+      );
+
       // Fallback to cache
       final cachedModules = await _loadCachedModules();
       try {
@@ -165,6 +186,38 @@ class ModuleService {
     }
   }
 
+  // Update an existing module in Firestore
+  Future<void> updateModule({
+    required String moduleId,
+    String? title,
+    String? content,
+    List<String>? pictures,
+    int? order,
+    String? description,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (title != null) updateData['title'] = title;
+      if (content != null) updateData['content'] = content;
+      if (pictures != null) updateData['pictures'] = pictures;
+      if (order != null) updateData['order'] = order;
+      if (description != null) updateData['description'] = description;
+
+      await _db.collection('modules').doc(moduleId).update(updateData);
+
+      // Clear cache so updated module is reloaded
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_modulesCacheKey);
+      await prefs.remove(_modulesCacheTimestampKey);
+    } catch (e) {
+      appLogger.e('Error updating module', error: e);
+      rethrow;
+    }
+  }
+
   // Get user's module progress
   Future<Map<String, dynamic>> getUserModuleProgress() async {
     final user = _auth.currentUser;
@@ -181,13 +234,13 @@ class ModuleService {
       if (moduleProgressData != null && moduleProgressData is Map) {
         moduleProgress = Map<String, dynamic>.from(moduleProgressData);
       }
-      
+
       final bookmarksData = data['moduleBookmarks'];
       List<dynamic> moduleBookmarks = [];
       if (bookmarksData != null && bookmarksData is List) {
         moduleBookmarks = List.from(bookmarksData);
       }
-      
+
       return {
         'modulesCompleted': data['modulesCompleted'] ?? 0,
         'moduleProgress': moduleProgress,
@@ -284,18 +337,28 @@ class ModuleService {
         currentData = userDoc.data() ?? {};
       }
 
-      Map<String, dynamic> moduleProgress = Map<String, dynamic>.from(
-        currentData['moduleProgress'] ?? {},
-      );
-
-      if (!moduleProgress.containsKey(moduleId)) {
-        moduleProgress[moduleId] = {};
+      // Safely convert moduleProgress from Firestore
+      final moduleProgressData = currentData['moduleProgress'];
+      Map<String, dynamic> moduleProgress = {};
+      if (moduleProgressData != null && moduleProgressData is Map) {
+        moduleProgress = Map<String, dynamic>.from(moduleProgressData);
       }
 
-      (moduleProgress[moduleId] as Map<String, dynamic>)['scrollPosition'] =
-          scrollPosition;
-      (moduleProgress[moduleId] as Map<String, dynamic>)['lastAccessed'] =
-          FieldValue.serverTimestamp();
+      // Safely get or create the module's progress entry
+      Map<String, dynamic> moduleEntry = {};
+      if (moduleProgress.containsKey(moduleId)) {
+        final entryData = moduleProgress[moduleId];
+        if (entryData != null && entryData is Map) {
+          moduleEntry = Map<String, dynamic>.from(entryData);
+        }
+      }
+
+      // Update the module entry
+      moduleEntry['scrollPosition'] = scrollPosition;
+      moduleEntry['lastAccessed'] = FieldValue.serverTimestamp();
+
+      // Update the moduleProgress map
+      moduleProgress[moduleId] = moduleEntry;
 
       await userRef.set({
         'moduleProgress': moduleProgress,
@@ -348,3 +411,4 @@ class ModuleService {
     }
   }
 }
+*/
