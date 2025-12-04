@@ -77,28 +77,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
           ),
 
-          // Profile Picture Section (overlapping) and White Content Card
+          // White Content Card
           Expanded(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // White Content Card
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 80),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
 
                           // Username Field
                           Text(
@@ -145,7 +141,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Email Field
+                          // Email Field (Read-only)
                           Text(
                             'Email',
                             style: GoogleFonts.poppins(
@@ -157,9 +153,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextFormField(
                             controller: emailController,
                             keyboardType: TextInputType.emailAddress,
+                            readOnly: true,
+                            enabled: false,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              color: Colors.black87,
+                              color: Colors.grey[600],
                             ),
                             decoration: InputDecoration(
                               hintText: 'Enter your email',
@@ -172,22 +170,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               ),
                               focusedBorder: UnderlineInputBorder(
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFd84040),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              disabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
                                 ),
                               ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!RegExp(
-                                r'^[^@]+@[^@]+\.[^@]+',
-                              ).hasMatch(value)) {
-                                return 'Enter a valid email address';
-                              }
-                              return null;
-                            },
                           ),
                           const SizedBox(height: 24),
 
@@ -285,24 +277,38 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                                   );
                                             }
 
-                                            // Update email if changed
-                                            final currentEmail =
-                                                user.email ?? '';
-                                            if (emailController.text.trim() !=
-                                                currentEmail) {
-                                              await _authService.updateEmail(
-                                                emailController.text.trim(),
-                                              );
-                                            }
+                                            // Email is read-only and cannot be changed
 
                                             // Update password if provided
                                             if (_isPasswordChanged &&
                                                 passwordController
                                                     .text
                                                     .isNotEmpty) {
-                                              await _authService.updatePassword(
-                                                passwordController.text,
-                                              );
+                                              try {
+                                                await _authService.updatePassword(
+                                                  passwordController.text,
+                                                );
+                                              } catch (e) {
+                                                // If re-authentication is required, prompt for current password
+                                                if (e.toString().contains('Please enter your current password')) {
+                                                  final currentPassword = await _showPasswordDialog(
+                                                    context,
+                                                    title: 'Enter Your Current Password',
+                                                    subtitle: 'Please enter your current password to change your password.',
+                                                  );
+                                                  if (currentPassword != null && currentPassword.isNotEmpty) {
+                                                    // Retry with current password
+                                                    await _authService.updatePassword(
+                                                      passwordController.text,
+                                                      currentPassword: currentPassword,
+                                                    );
+                                                  } else {
+                                                    throw 'Password update cancelled. Current password is required to change your password.';
+                                                  }
+                                                } else {
+                                                  rethrow;
+                                                }
+                                              }
                                             }
 
                                             if (!mounted) return;
@@ -389,60 +395,168 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ),
                 ),
+            ),
+          ],
+      ),
+    );
+  }
 
-                // Profile Picture (overlapping white section, lower position)
-                Positioned(
-                  top: -15,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundColor: const Color(0xFFE0E0E0),
-                          child: const Icon(
-                            Icons.person_add,
-                            size: 60,
-                            color: Colors.white,
+  Future<String?> _showPasswordDialog(
+    BuildContext context, {
+    String title = 'Enter Your Password',
+    String subtitle = 'Please enter your current password to change your email address.',
+  }) async {
+    final passwordController = TextEditingController();
+    bool obscurePassword = true;
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    // Subtitle
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    // Password Field
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: obscurePassword,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your password',
+                        hintStyle: GoogleFonts.poppins(
+                          color: Colors.grey[400],
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.grey[300]!,
                           ),
                         ),
-                        // Edit Icon Button (top-right corner of circle)
-                        Positioned(
-                          top: -5,
-                          right: -5,
-                          child: GestureDetector(
-                            onTap: () {
-                              // TODO: Implement profile picture picker
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: const BorderSide(
+                            color: Color(0xFFd84040),
+                          ),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey[600],
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              obscurePassword = !obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      autofocus: true,
+                      onFieldSubmitted: (value) {
+                        if (value.isNotEmpty) {
+                          Navigator.of(context).pop(value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    // Buttons
+                    Row(
+                      children: [
+                        // Cancel Button
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
                             },
-                            child: Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: const Color(0xFFd84040),
-                                  width: 2,
-                                ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[300],
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(
-                                Icons.edit,
-                                color: Color(0xFFd84040),
-                                size: 16,
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: GoogleFonts.poppins(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Confirm Button
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final password = passwordController.text;
+                              if (password.isNotEmpty) {
+                                Navigator.of(context).pop(password);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFd84040),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Confirm',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

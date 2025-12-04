@@ -47,6 +47,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
+        // SIGN-UP ROUTE: '/' maps to SignUpScreen
+        // This route is used for:
+        // - Initial app launch
+        // - Redirect after account deletion (see lib/screens/main_pages/edit_profile.dart)
+        // To change sign-up route: Update both here and in edit_profile.dart _deleteAccount method
         '/': (context) => const SignUpScreen(),
         '/login': (context) => const LoginScreen(),
         '/disclaimer': (context) => const DisclaimerPage(),

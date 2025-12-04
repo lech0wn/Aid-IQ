@@ -1,14 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:aid_iq/utils/logger.dart';
-import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
-  final _google = GoogleSignIn(scopes: ['email']);
 
   Future<User?> signUpWithEmail(
     String email,
@@ -24,28 +22,16 @@ class AuthService {
           email: email,
           password: password,
         );
-        // Update display name if provided
-        if (displayName != null &&
-            displayName.isNotEmpty &&
-            cred.user != null) {
-          try {
-            await cred.user!.updateDisplayName(displayName);
-            await cred.user!.reload();
-          } catch (e) {
-            // If updating display name fails, continue anyway
-            appLogger.w('Failed to update display name', error: e);
-          }
+        
+        final user = cred.user;
+        if (user == null) {
+          throw 'Failed to create user account.';
         }
-        // Get the updated user after reload
-        final user = _auth.currentUser;
-        if (user != null) {
-          try {
-            await _upsertUser(user);
-          } catch (e) {
-            // If Firestore write fails, still return the user (auth succeeded)
-            appLogger.w('Failed to save user to Firestore', error: e);
-          }
-        }
+
+        // Return user immediately for faster UX
+        // Background tasks will complete asynchronously
+        _initializeUserDataInBackground(user, displayName);
+        
         return user;
       } on FirebaseAuthException catch (e) {
         // Check if it's a network error that we should retry
@@ -199,209 +185,74 @@ class AuthService {
     throw 'Network error: Unable to connect. Please check your internet connection and try again.';
   }
 
-  Future<User?> signInWithGoogle() async {
-    int maxRetries = 3;
-    int retryCount = 0;
-
-    while (retryCount < maxRetries) {
-      try {
-        // Sign in with Google
-        final acct = await _google.signIn();
-
-        // User cancelled the sign-in
-        if (acct == null) {
-          appLogger.d('Google sign-in cancelled by user');
-          return null;
-        }
-
-        // Get authentication details
-        final auth = await acct.authentication;
-
-        // Check if we have the required tokens
-        if (auth.idToken == null) {
-          throw 'Failed to get authentication token. Please try again.';
-        }
-
-        // Create Firebase credential
-        final credential = GoogleAuthProvider.credential(
-          idToken: auth.idToken,
-          accessToken: auth.accessToken,
-        );
-
-        // Sign in to Firebase with Google credential
-        final cred = await _auth.signInWithCredential(credential);
-
-        if (cred.user == null) {
-          throw 'Failed to sign in. Please try again.';
-        }
-
-        // Save user to Firestore (don't fail if this fails)
-        try {
-          await _upsertUser(cred.user);
-        } catch (e) {
-          appLogger.w(
-            'Failed to save user to Firestore after Google sign-in',
-            error: e,
-          );
-          // Continue anyway - auth succeeded
-        }
-
-        appLogger.i('Google sign-in successful for ${cred.user!.email}');
-        return cred.user;
-      } on FirebaseAuthException catch (e) {
-        appLogger.e('Firebase auth error during Google sign-in', error: e);
-
-        // Check if it's a network error that we should retry
-        final errorCode = e.code.toLowerCase();
-        final errorMessage = e.message?.toLowerCase() ?? '';
-
-        if ((errorCode == 'unknown' ||
-                errorCode == 'network-request-failed' ||
-                errorMessage.contains('connection') ||
-                errorMessage.contains('network') ||
-                errorMessage.contains('i/o') ||
-                errorMessage.contains('reset')) &&
-            retryCount < maxRetries - 1) {
-          retryCount++;
-          appLogger.w(
-            'Network error during Google sign-in, retrying ($retryCount/$maxRetries)',
-            error: e,
-          );
-          await Future.delayed(Duration(seconds: retryCount * 2));
-          continue;
-        }
-
-        // Handle specific Firebase auth errors
-        String errorMsg = _friendlyGoogleSignInError(e);
-        throw errorMsg;
-      } on PlatformException catch (e) {
-        appLogger.e('Platform error during Google sign-in', error: e);
-
-        // Handle specific Google Play Services error codes
-        final errorCode = e.code;
-        final errorMessage = e.message ?? '';
-
-        // Error code 10 = DEVELOPER_ERROR (configuration issue)
-        if (errorCode == 'sign_in_failed' &&
-            (errorMessage.contains('ApiException: 10') ||
-                errorMessage.contains('10:'))) {
-          throw 'Google sign-in configuration error. Please ensure:\n'
-              '1. SHA-1 fingerprint is added in Firebase Console\n'
-              '2. Google Sign-In is enabled in Firebase Authentication\n'
-              '3. OAuth client is configured correctly';
-        }
-
-        // Error code 4 = SIGN_IN_REQUIRED
-        if (errorCode == 'sign_in_failed' &&
-            errorMessage.contains('ApiException: 4')) {
-          throw 'Please sign in to your Google account on this device first.';
-        }
-
-        // Error code 7 = NETWORK_ERROR
-        if (errorCode == 'sign_in_failed' &&
-            errorMessage.contains('ApiException: 7')) {
-          if (retryCount < maxRetries - 1) {
-            retryCount++;
-            appLogger.w(
-              'Network error during Google sign-in, retrying ($retryCount/$maxRetries)',
-              error: e,
-            );
-            await Future.delayed(Duration(seconds: retryCount * 2));
-            continue;
-          }
-          throw 'Network error: Please check your internet connection and try again.';
-        }
-
-        // Generic PlatformException handling
-        if (errorCode == 'sign_in_failed') {
-          throw 'Google sign-in failed: ${errorMessage.isNotEmpty ? errorMessage : "Please check your configuration"}';
-        }
-
-        throw 'Google sign-in error: ${errorMessage.isNotEmpty ? errorMessage : errorCode}';
-      } catch (e) {
-        final errorString = e.toString().toLowerCase();
-
-        // Check if it's a network error that we should retry
-        if ((errorString.contains('connection') ||
-                errorString.contains('network') ||
-                errorString.contains('i/o') ||
-                errorString.contains('reset') ||
-                errorString.contains('timeout')) &&
-            retryCount < maxRetries - 1) {
-          retryCount++;
-          appLogger.w(
-            'Network error during Google sign-in, retrying ($retryCount/$maxRetries)',
-            error: e,
-          );
-          await Future.delayed(Duration(seconds: retryCount * 2));
-          continue;
-        }
-
-        appLogger.e('Google sign-in error', error: e);
-
-        // Provide user-friendly error messages
-        if (errorString.contains('sign_in_canceled') ||
-            errorString.contains('sign_in_cancelled')) {
-          return null; // User cancelled - not an error
-        }
-
-        if (errorString.contains('configuration') ||
-            errorString.contains('oauth') ||
-            errorString.contains('client_id') ||
-            errorString.contains('apiexception: 10') ||
-            errorString.contains('developer_error')) {
-          throw 'Google sign-in configuration error. Please ensure:\n'
-              '1. SHA-1 fingerprint is added in Firebase Console\n'
-              '2. Google Sign-In is enabled in Firebase Authentication\n'
-              '3. OAuth client is configured correctly';
-        }
-
-        if (errorString.contains('network') ||
-            errorString.contains('connection')) {
-          throw 'Network error: Please check your internet connection and try again.';
-        }
-
-        // Generic error message
-        final errorMsg = e.toString();
-        if (errorMsg.startsWith('Exception: ')) {
-          throw errorMsg.substring(11);
-        }
-        throw 'Google sign-in failed: ${errorMsg}';
-      }
-    }
-
-    // If we exhausted all retries
-    throw 'Network error: Unable to connect. Please check your internet connection and try again.';
-  }
-
-  String _friendlyGoogleSignInError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'account-exists-with-different-credential':
-        return 'An account already exists with the same email but different sign-in method.';
-      case 'invalid-credential':
-        return 'The credential is invalid or has expired. Please try again.';
-      case 'operation-not-allowed':
-        return 'Google sign-in is not enabled. Please contact support.';
-      case 'user-disabled':
-        return 'This account has been disabled.';
-      case 'user-not-found':
-        return 'No account found. Please try again.';
-      case 'wrong-password':
-        return 'Invalid credentials. Please try again.';
-      case 'network-request-failed':
-        return 'Network error. Please check your internet connection.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      default:
-        return 'Google sign-in failed: ${e.message ?? e.code}. Please try again.';
-    }
-  }
-
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  /// Deletes the user's account and clears all authentication state.
+  /// 
+  /// This method:
+  /// 1. Re-authenticates the user with their password
+  /// 2. Deletes user data from Firestore
+  /// 3. Deletes the Firebase Auth account (this automatically clears auth tokens/session)
+  /// 4. Explicitly signs out from Firebase
+  /// 
+  /// After successful deletion, the user is effectively logged out and cannot
+  /// access authenticated routes. The frontend should redirect to sign-up page.
+  /// 
+  /// Throws an exception if deletion fails - frontend should NOT redirect on error.
+  /// 
+  /// @param password The user's current password for re-authentication
+  /// @throws FirebaseAuthException with specific error codes
+  Future<void> deleteAccount(String password) async {
+    final user = _auth.currentUser;
+    if (user == null) throw 'No user is currently signed in.';
+
     try {
-      await _google.signOut();
-    } catch (_) {}
+      // Step 1: Re-authenticate user with password (required by Firebase for sensitive operations)
+      await reauthenticateWithPassword(password);
+
+      // Step 2: Delete user data from Firestore
+      try {
+        await _db.collection('users').doc(user.uid).delete();
+        appLogger.d('User data deleted from Firestore');
+      } catch (e) {
+        appLogger.w('Failed to delete user data from Firestore', error: e);
+        // Continue with account deletion even if Firestore deletion fails
+      }
+
+      // Step 3: Delete the Firebase Auth account
+      // This automatically:
+      // - Invalidates all auth tokens
+      // - Clears the current session
+      // - Logs the user out
+      // - Makes currentUser return null
+      await user.delete();
+      appLogger.d('User account deleted successfully - auth tokens cleared');
+
+      // Step 4: Explicitly sign out from Firebase to ensure complete session clearing
+      // (user.delete() should handle this, but this ensures it)
+      try {
+        await _auth.signOut();
+      } catch (_) {
+        // Ignore sign out errors if account is already deleted
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase auth errors
+      switch (e.code) {
+        case 'requires-recent-login':
+          throw 'Please enter your password to delete your account.';
+        case 'wrong-password':
+          throw 'Incorrect password. Please try again.';
+        case 'invalid-credential':
+          throw 'Invalid credentials. Please try again.';
+        default:
+          throw 'Failed to delete account: ${e.message ?? e.code}';
+      }
+    } catch (e) {
+      appLogger.e('Error deleting account', error: e);
+      rethrow;
+    }
   }
 
   Stream<User?> authStateChanges() => _auth.authStateChanges();
@@ -424,7 +275,40 @@ class AuthService {
     }
   }
 
-  Future<void> updateEmail(String newEmail) async {
+  Future<void> reauthenticateWithPassword(String password) async {
+    final user = _auth.currentUser;
+    if (user == null) throw 'No user is currently signed in.';
+    if (user.email == null) throw 'User email is not available.';
+
+    try {
+      // Create credential with email and password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      // Re-authenticate the user
+      await user.reauthenticateWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'wrong-password':
+          throw 'Incorrect password. Please try again.';
+        case 'invalid-credential':
+          throw 'Invalid credentials. Please try again.';
+        case 'user-mismatch':
+          throw 'The provided credentials do not match the current user.';
+        case 'user-not-found':
+          throw 'User not found.';
+        case 'invalid-email':
+          throw 'Invalid email address.';
+        case 'network-request-failed':
+          throw 'Network error. Please check your internet connection.';
+        default:
+          throw 'Re-authentication failed: ${e.message ?? e.code}';
+      }
+    }
+  }
+
+  Future<void> updateEmail(String newEmail, {String? password}) async {
     final user = _auth.currentUser;
     if (user == null) throw 'No user is currently signed in.';
 
@@ -440,7 +324,24 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'requires-recent-login':
-          throw 'Coming Soon!';
+          // If password is provided, try to re-authenticate and retry
+          if (password != null && password.isNotEmpty) {
+            try {
+              await reauthenticateWithPassword(password);
+              // Retry the email update after re-authentication
+              await (user as dynamic).updateEmail(newEmail);
+              await user.reload();
+              final updatedUser = _auth.currentUser;
+              if (updatedUser != null) {
+                await _upsertUser(updatedUser);
+              }
+              return; // Success
+            } catch (reauthError) {
+              // Re-throw the re-authentication error
+              throw reauthError;
+            }
+          }
+          throw 'Please enter your password to change your email address.';
         case 'email-already-in-use':
           throw 'This email is already in use by another account.';
         case 'invalid-email':
@@ -458,7 +359,7 @@ class AuthService {
     }
   }
 
-  Future<void> updatePassword(String newPassword) async {
+  Future<void> updatePassword(String newPassword, {String? currentPassword}) async {
     final user = _auth.currentUser;
     if (user == null) throw 'No user is currently signed in.';
 
@@ -468,7 +369,19 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'requires-recent-login':
-          throw 'Coming Soon!';
+          // If current password is provided, try to re-authenticate and retry
+          if (currentPassword != null && currentPassword.isNotEmpty) {
+            try {
+              await reauthenticateWithPassword(currentPassword);
+              // Retry the password update after re-authentication
+              await (user as dynamic).updatePassword(newPassword);
+              return; // Success
+            } catch (reauthError) {
+              // Re-throw the re-authentication error
+              throw reauthError;
+            }
+          }
+          throw 'Please enter your current password to change your password.';
         case 'weak-password':
           throw 'The password provided is too weak.';
         default:
@@ -502,17 +415,61 @@ class AuthService {
                 : null,
       };
 
-      // Initialize quiz stats if user doesn't exist yet
+      // Initialize all stats to zero/empty if user doesn't exist yet
       if (!userDoc.exists) {
         userData['quizzesTaken'] = 0;
         userData['streak'] = 0;
         userData['quizProgress'] = {};
+        userData['modulesCompleted'] = 0;
+        userData['moduleProgress'] = {};
+        userData['moduleBookmarks'] = [];
+        userData['totalReadingTime'] = 0;
+        // Note: lastQuizDate and lastActivityDate are not set for new users
+        // They will be created when the user takes their first quiz
       }
 
       await userRef.set(userData, SetOptions(merge: true));
     } catch (e) {
       appLogger.e('Error saving user to Firestore', error: e);
       rethrow;
+    }
+  }
+
+  /// Initialize user data in the background (non-blocking)
+  /// This allows the sign-up flow to return immediately for better UX
+  void _initializeUserDataInBackground(User user, String? displayName) {
+    // Update display name if provided (non-blocking)
+    if (displayName != null && displayName.isNotEmpty) {
+      user.updateDisplayName(displayName).catchError((e) {
+        appLogger.w('Failed to update display name', error: e);
+      });
+    }
+    
+    // Save user to Firestore (non-blocking)
+    _upsertUser(user).catchError((e) {
+      appLogger.w('Failed to save user to Firestore', error: e);
+    });
+    
+    // Clear local stats (non-blocking)
+    _clearLocalStats().catchError((e) {
+      appLogger.w('Failed to clear local stats', error: e);
+    });
+  }
+
+  /// Clear all local stats stored in SharedPreferences
+  /// This ensures new accounts start with a clean slate
+  Future<void> _clearLocalStats() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Clear all module-related stats
+      await prefs.remove('module_progress');
+      await prefs.remove('modules_completed');
+      await prefs.remove('total_reading_time');
+      await prefs.remove('module_bookmarks');
+      appLogger.d('Cleared all local stats for new account');
+    } catch (e) {
+      appLogger.w('Failed to clear local stats', error: e);
+      // Don't throw - this is not critical for account creation
     }
   }
 

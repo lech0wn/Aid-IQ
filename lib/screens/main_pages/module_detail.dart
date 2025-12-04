@@ -23,6 +23,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   DateTime? _startTime;
   int _estimatedReadingTime = 5; // minutes (based on content length)
   final BlockquoteBuilder _blockquoteBuilder = BlockquoteBuilder();
+  bool _showBackToTop = false; // Show back to top button when scrolled down
 
   @override
   void initState() {
@@ -89,6 +90,15 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
       final currentScroll = _scrollController.position.pixels;
+      
+      // Show back to top button when scrolled down more than 200 pixels
+      final shouldShow = currentScroll > 200;
+      if (shouldShow != _showBackToTop) {
+        setState(() {
+          _showBackToTop = shouldShow;
+        });
+      }
+      
       if (maxScroll > 0) {
         final position = currentScroll / maxScroll;
         // Update state for real-time progress indicator
@@ -101,6 +111,16 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
           position,
         );
       }
+    }
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -624,6 +644,18 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
           ),
         ],
       ),
+      // Back to Top Button
+      floatingActionButton: _showBackToTop
+          ? FloatingActionButton(
+              onPressed: _scrollToTop,
+              backgroundColor: const Color(0xFFd84040),
+              child: const Icon(
+                Icons.arrow_upward,
+                color: Colors.white,
+              ),
+              tooltip: 'Back to Top',
+            )
+          : null,
     );
   }
 }

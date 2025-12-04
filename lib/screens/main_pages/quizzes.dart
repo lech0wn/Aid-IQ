@@ -42,7 +42,7 @@ class _QuizzesPageState extends State<QuizzesPage> {
       case 'First Aid Introduction':
         return 'Learn the basics of first aid and emergency response.';
       case 'CPR':
-        return 'Cardiopulmonary Resuscitation techniques and procedures.';
+        return 'CPR techniques and procedures.';
       case 'Wound Cleaning':
         return 'Proper wound cleaning and disinfection procedures.';
       case 'R.I.C.E. (Treating Sprains)':
